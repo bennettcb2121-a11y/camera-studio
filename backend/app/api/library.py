@@ -127,3 +127,22 @@ def pick_folder():
     except Exception:
         pass
     return {"path": None}
+
+
+@router.post("/pick-file")
+def pick_file():
+    """Native file dialog (used for the music track). Returns null if cancelled."""
+    sysname = platform.system()
+    try:
+        if sysname == "Darwin":
+            r = subprocess.run(["osascript", "-e", 'POSIX path of (choose file with prompt "Choose an audio file")'],
+                               capture_output=True, text=True, timeout=300)
+            return {"path": r.stdout.strip() or None}
+        if sysname == "Windows":
+            ps = ("Add-Type -AssemblyName System.Windows.Forms; $d = New-Object System.Windows.Forms.OpenFileDialog; "
+                  "if ($d.ShowDialog() -eq 'OK') { $d.FileName }")
+            r = subprocess.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True, text=True, timeout=300)
+            return {"path": r.stdout.strip() or None}
+    except Exception:
+        pass
+    return {"path": None}

@@ -30,3 +30,24 @@ Choices made autonomously during the build, with reasons. Newest at the bottom.
    defined on sRGB-encoded values (as .cube LUTs and photo-editor sliders are). The
    pipeline encodes once before that block and decodes once after; the image between
    stages is always linear float32 as required.
+10. **CLAHE lives in the local-contrast stage.** "Auto" asks for CLAHE on luminance, but all
+    edits must be slider JSON, so `clahe` (0–100) is a setting applied inside the
+    local-contrast stage next to clarity. Everything stays re-renderable from the sidecar.
+11. **Video looks are baked LUTs.** A preset = sliders + LUT; to apply it to a clip "via
+    FFmpeg lut3d" the per-pixel part of the pipeline (WB, exposure, tone, HSL, LUT…) is
+    pushed through an identity lattice and written as one .cube. Spatial stages (clarity,
+    CLAHE, denoise, sharpen, vignette, crop) can't be a LUT and are skipped for video.
+12. **FFmpeg filter paths.** The project folder contains an apostrophe and spaces, which
+    breaks FFmpeg filtergraph quoting. `lut3d` runs with `cwd` = the LUT folder and a bare
+    hash filename. Found by using the UI, now covered by a regression test.
+13. **No GitHub access from this session.** No `gh`, no token, no stored HTTPS credential
+    and the repo does not exist under the account's public repos (SSH auth works, but SSH
+    cannot create a repo or a PR). Everything is committed on `build/v1` locally;
+    `open_pr.sh` pushes and opens the PR page once a remote exists. See SETUP_FOR_CHARLIE.md.
+14. **Preview quality tiers.** While a slider is being dragged the UI asks for a 1024px
+    render (≈30–60 ms); on release it asks for the full 2048px proxy and writes the history
+    entry. One history entry per drag, not per mouse move.
+15. **Titles are drawn with Pillow, not MoviePy's TextClip** (no ImageMagick dependency;
+    picks Arial/Helvetica on Mac, Arial on Windows, DejaVu on Linux, else Pillow's default).
+16. **Music fixture is AAC/.m4a**: the bundled FFmpeg has no MP3 *encoder* (it decodes MP3 fine,
+    so Charlie's own .mp3 tracks work).

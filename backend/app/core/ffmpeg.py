@@ -27,9 +27,9 @@ def configure_moviepy() -> None:
     os.environ.setdefault("IMAGEIO_FFMPEG_EXE", ffmpeg_exe())
 
 
-def run(args: list[str], timeout: float | None = None) -> subprocess.CompletedProcess:
+def run(args: list[str], timeout: float | None = None, cwd: str | None = None) -> subprocess.CompletedProcess:
     cmd = [ffmpeg_exe(), "-hide_banner", "-loglevel", "error", "-y", *args]
-    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False)
+    return subprocess.run(cmd, capture_output=True, text=True, timeout=timeout, check=False, cwd=cwd)
 
 
 def probe(path: str) -> dict:

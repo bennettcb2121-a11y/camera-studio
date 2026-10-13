@@ -1,0 +1,15 @@
+@echo off
+REM Charlie's Camera Studio - Windows start script. Needs only uv (https://docs.astral.sh/uv/).
+cd /d "%~dp0"
+where uv >nul 2>nul
+if errorlevel 1 (
+  echo uv is not installed. Install it in PowerShell with:
+  echo   powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+  echo then open a new terminal and run run.bat again.
+  pause
+  exit /b 1
+)
+echo Installing / checking Python and dependencies (first run takes a minute)...
+uv sync --frozen --quiet
+uv run python -m backend.app.main --open %*
+pause

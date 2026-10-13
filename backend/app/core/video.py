@@ -231,12 +231,16 @@ def look_settings(look: dict | None) -> EditSettings | None:
 
 def apply_look_ffmpeg(src: Path, cube: Path, start: float, end: float, out: Path, height: int | None = None) -> Path:
     """Trim + lut3d in one FFmpeg pass (this is how the video look matches the photo look)."""
-    vf = f"lut3d='{cube.as_posix()}'"
+    # The filtergraph parser chokes on quotes, colons and spaces in paths (e.g. a folder
+    # called "Charlie's Camera Studio"), so run with cwd = the LUT folder and pass only
+    # its plain hash filename. Input/output paths are ordinary args and are safe.
+    vf = f"lut3d={cube.name}"
     if height:
         vf += f",scale=-2:{height}"
-    args = ["-ss", f"{start:.3f}", "-to", f"{end:.3f}", "-i", str(src), "-vf", vf, "-c:v", "libx264", "-preset", "veryfast",
-            "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", "-f", "mp4", str(out)]
-    r = ffmpeg.run(args)
+    args = ["-ss", f"{start:.3f}", "-to", f"{end:.3f}", "-i", str(Path(src).resolve()), "-vf", vf, "-c:v", "libx264",
+            "-preset", "veryfast", "-crf", "18", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart",
+            "-f", "mp4", str(Path(out).resolve())]
+    r = ffmpeg.run(args, cwd=str(cube.parent))
     if r.returncode != 0:
         raise RuntimeError(f"lut3d failed: {r.stderr[-800:]}")
     return out

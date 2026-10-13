@@ -131,3 +131,15 @@ def test_video_api(app_client, videos):
     j = jobs.queue.wait(r.json()["id"])
     assert j.status == "done", j.error
     assert app_client.delete(f"/api/video/projects/{pid}").status_code == 200
+
+
+def test_lut_in_folder_with_apostrophe_and_space(videos, tmp_path):
+    """Regression: the app lives in "Charlie's Camera Studio"; FFmpeg's filtergraph must
+    not see the quote/space (run with cwd = LUT folder, bare filename)."""
+    d = tmp_path / "it's a dir"
+    d.mkdir()
+    cube = d / "look.cube"
+    Lut3D.from_function(lambda c: 1 - c, 9, "inv").write_cube(cube)
+    out = d / "out clip.mp4"
+    V.apply_look_ffmpeg(videos[0], cube, 0.0, 1.0, out, height=360)
+    assert out.exists() and probe(str(out))["height"] == 360
