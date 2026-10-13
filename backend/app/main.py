@@ -78,6 +78,18 @@ def create_app() -> FastAPI:
 app = create_app()
 
 
+def _already_running(url: str) -> bool:
+    """True if another copy of this app already answers on the port."""
+    import json
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(url + "/api/health", timeout=1.5) as r:
+            return bool(json.load(r).get("ok"))
+    except Exception:
+        return False
+
+
 def main() -> None:
     import uvicorn
 
@@ -89,6 +101,11 @@ def main() -> None:
     args = ap.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(levelname)s %(name)s: %(message)s")
     url = f"http://{args.host}:{args.port}"
+    if _already_running(url):
+        print(f"\n  Charlie's Camera Studio is already running -> {url}\n")
+        if args.open:
+            webbrowser.open(url)
+        return
     if args.open:
         threading.Timer(1.2, lambda: webbrowser.open(url)).start()
     print(f"\n  Charlie's Camera Studio -> {url}\n")
