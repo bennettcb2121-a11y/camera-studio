@@ -1,6 +1,8 @@
 @echo off
 REM Charlie's Camera Studio - Windows start script. Needs only uv (https://docs.astral.sh/uv/).
 cd /d "%~dp0"
+REM uv installs to %USERPROFILE%\.local\bin; add it in case PATH was not refreshed.
+set "PATH=%USERPROFILE%\.local\bin;%USERPROFILE%\.cargo\bin;%PATH%"
 where uv >nul 2>nul
 if errorlevel 1 (
   echo uv is not installed. Install it in PowerShell with:

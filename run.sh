@@ -3,6 +3,9 @@
 # Needs only `uv` (https://docs.astral.sh/uv/). Everything else installs itself.
 set -e
 cd "$(dirname "$0")"
+# uv installs to ~/.local/bin (or ~/.cargo/bin); make sure we find it even when the
+# shell PATH has not been refreshed since the install.
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
 if ! command -v uv >/dev/null 2>&1; then
   echo "uv is not installed. Install it with:"
   echo "  curl -LsSf https://astral.sh/uv/install.sh | sh"
