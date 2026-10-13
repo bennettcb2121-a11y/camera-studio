@@ -87,7 +87,7 @@ That pushes `main` and `build/v1` and opens the "create pull request" page. Past
 | 4. 8 mockups render + arrow keys cycle | ✅ Rendered for every image; arrows checked in the browser | open Mockups, press `←` `→` |
 | 5. AI Critique / Auto-edit / Research / Best-of-N | ⚠️ **Mocked** – no API key here. All four modes ran against a scripted fake client; AI edits verified in the undo history | add your key, then `uv run pytest -q -k live` and try the AI tab |
 | 6. Trim + LUT + title + 9:16 export | ✅ Synthetic clips; `.MTS` container covered | `uv run pytest -q -k export_9x16`, or in the Video tab |
-| 7. All tests pass | ✅ 51 passed, 1 skipped (the live-API test) | `uv run pytest -q` |
+| 7. All tests pass | ✅ 51 passed, 1 skipped (the live-API test); CI green on macOS **and Windows** | `uv run pytest -q` |
 
 **Needs real samples** – things that would benefit from your own files:
 
@@ -111,9 +111,9 @@ profile logging. Research mode uses the web search tool and costs a few cents pe
   **Render draft** to watch the whole timeline with looks and titles.
 - Speed changes on the preview player are approximate (browser playback rate);
   exports are exact.
-- Windows was not tested here (no Windows machine). The code has no Mac-only paths
-  except the native folder/file dialogs, which have PowerShell equivalents, and
-  `run.bat` mirrors `run.sh`. If anything fails, run `uv run python -m backend.app.main`
+- Windows: the full test suite passes on GitHub's Windows runner (CI badge on the
+  repo), but the UI was only clicked through on a Mac. The native folder/file dialogs
+  use PowerShell on Windows. If anything fails, run `uv run python -m backend.app.main`
   in a terminal and send me the error.
 - Very large libraries (10k+ files) will make the first scan slow; thumbnails are
   built lazily.

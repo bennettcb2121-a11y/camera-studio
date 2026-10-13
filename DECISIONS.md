@@ -51,3 +51,9 @@ Choices made autonomously during the build, with reasons. Newest at the bottom.
     picks Arial/Helvetica on Mac, Arial on Windows, DejaVu on Linux, else Pillow's default).
 16. **Music fixture is AAC/.m4a**: the bundled FFmpeg has no MP3 *encoder* (it decodes MP3 fine,
     so Charlie's own .mp3 tracks work).
+17. **CI added after the PR was opened** (`.github/workflows/tests.yml`): pytest on
+    macOS + Windows, plus a check that `frontend/dist` matches the sources. The first
+    Windows run failed only on the 150 ms preview-timing assertion (shared runners are
+    several times slower than the laptop); it is relaxed to 900 ms when `CI` is set and
+    unchanged locally. On failure the workflow posts the pytest tail as a PR comment,
+    because job logs need repo-admin auth that these sessions don't have.
