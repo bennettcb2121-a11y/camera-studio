@@ -1,0 +1,14 @@
+{
+ "id": "neutral-pop",
+ "name": "Neutral Pop",
+ "group": "Utility",
+ "description": "A gentle, safe boost for any photo.",
+ "order": 20,
+ "settings": {
+  "vibrance": 10,
+  "lut": {
+   "name": "neutral-pop",
+   "strength": 1.0
+  }
+ }
+}

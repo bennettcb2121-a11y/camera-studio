@@ -1,0 +1,14 @@
+{
+ "id": "teal-orange",
+ "name": "Teal & Orange",
+ "group": "Travel",
+ "description": "The blockbuster look: teal shadows, orange skin.",
+ "order": 7,
+ "settings": {
+  "vibrance": 10,
+  "lut": {
+   "name": "teal-orange",
+   "strength": 0.85
+  }
+ }
+}

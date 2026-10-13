@@ -1,0 +1,14 @@
+{
+ "id": "classic-mono-portrait",
+ "name": "Classic Mono Portrait",
+ "group": "Portrait",
+ "description": "Orange-filtered black and white that smooths skin.",
+ "order": 14,
+ "settings": {
+  "clarity": -5,
+  "lut": {
+   "name": "classic-mono-portrait",
+   "strength": 1.0
+  }
+ }
+}

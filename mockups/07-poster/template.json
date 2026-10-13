@@ -1,0 +1,31 @@
+{
+ "name": "Poster",
+ "slots": [
+  {
+   "corners": [
+    [
+     560,
+     210
+    ],
+    [
+     1040,
+     192
+    ],
+    [
+     1050,
+     960
+    ],
+    [
+     570,
+     960
+    ]
+   ]
+  }
+ ],
+ "blend": {
+  "mode": "normal",
+  "opacity": 1.0,
+  "fit": "cover"
+ },
+ "overlay": "overlay.png"
+}

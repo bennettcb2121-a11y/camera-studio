@@ -1,0 +1,15 @@
+{
+ "id": "stadium-pop",
+ "name": "Stadium Pop",
+ "group": "Sport",
+ "description": "Cool shadows, bright vivid colour, floodlight look.",
+ "order": 18,
+ "settings": {
+  "vibrance": 15,
+  "sharpen": 20,
+  "lut": {
+   "name": "stadium-pop",
+   "strength": 0.9
+  }
+ }
+}

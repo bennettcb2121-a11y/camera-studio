@@ -1,0 +1,16 @@
+{
+ "id": "crisp-action",
+ "name": "Crisp Action",
+ "group": "Sport",
+ "description": "Neutral colour, maximum detail and micro-contrast.",
+ "order": 19,
+ "settings": {
+  "clarity": 35,
+  "sharpen": 45,
+  "blacks": -10,
+  "lut": {
+   "name": "crisp-action",
+   "strength": 1.0
+  }
+ }
+}

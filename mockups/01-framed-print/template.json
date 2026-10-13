@@ -1,0 +1,31 @@
+{
+ "name": "Framed print on wall",
+ "slots": [
+  {
+   "corners": [
+    [
+     400,
+     260
+    ],
+    [
+     1200,
+     260
+    ],
+    [
+     1200,
+     793
+    ],
+    [
+     400,
+     793
+    ]
+   ]
+  }
+ ],
+ "blend": {
+  "mode": "normal",
+  "opacity": 1.0,
+  "fit": "cover"
+ },
+ "overlay": "overlay.png"
+}

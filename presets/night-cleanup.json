@@ -1,0 +1,17 @@
+{
+ "id": "night-cleanup",
+ "name": "Night Cleanup",
+ "group": "Utility",
+ "description": "Denoise and neutralise high-ISO tungsten scenes.",
+ "order": 22,
+ "settings": {
+  "denoise": 45,
+  "sharpen": 10,
+  "exposure": 0.3,
+  "blacks": 5,
+  "lut": {
+   "name": "night-cleanup",
+   "strength": 0.9
+  }
+ }
+}

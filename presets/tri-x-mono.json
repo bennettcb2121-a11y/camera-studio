@@ -1,0 +1,14 @@
+{
+ "id": "tri-x-mono",
+ "name": "Tri-X Mono",
+ "group": "Film",
+ "description": "Classic contrasty black and white, red-filtered skies.",
+ "order": 3,
+ "settings": {
+  "clarity": 15,
+  "lut": {
+   "name": "tri-x-mono",
+   "strength": 1.0
+  }
+ }
+}

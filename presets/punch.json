@@ -1,0 +1,15 @@
+{
+ "id": "punch",
+ "name": "Punch",
+ "group": "Sport",
+ "description": "High contrast, high saturation, crisp.",
+ "order": 16,
+ "settings": {
+  "clarity": 30,
+  "sharpen": 30,
+  "lut": {
+   "name": "punch",
+   "strength": 0.9
+  }
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "id": "kodak-warm",
+ "name": "Kodak Warm",
+ "group": "Film",
+ "description": "Golden, slightly faded consumer-film warmth.",
+ "order": 0,
+ "settings": {
+  "contrast": 8,
+  "lut": {
+   "name": "kodak-warm",
+   "strength": 0.9
+  }
+ }
+}

@@ -1,0 +1,15 @@
+{
+ "id": "clean-studio",
+ "name": "Clean Studio",
+ "group": "Portrait",
+ "description": "Neutral, bright, accurate colour.",
+ "order": 15,
+ "settings": {
+  "exposure": 0.1,
+  "whites": 10,
+  "lut": {
+   "name": "clean-studio",
+   "strength": 1.0
+  }
+ }
+}

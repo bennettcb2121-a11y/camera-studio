@@ -1,0 +1,27 @@
+{
+ "id": "soft-skin",
+ "name": "Soft Skin",
+ "group": "Portrait",
+ "description": "Gentle contrast, reduced reds, smooth tones.",
+ "order": 11,
+ "settings": {
+  "clarity": -15,
+  "denoise": 15,
+  "hsl": {
+   "sat": [
+    -10,
+    -10,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "lut": {
+   "name": "soft-skin",
+   "strength": 1.0
+  }
+ }
+}

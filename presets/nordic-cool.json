@@ -1,0 +1,15 @@
+{
+ "id": "nordic-cool",
+ "name": "Nordic Cool",
+ "group": "Travel",
+ "description": "Desaturated, cool, moody northern light.",
+ "order": 9,
+ "settings": {
+  "contrast": 5,
+  "clarity": 10,
+  "lut": {
+   "name": "nordic-cool",
+   "strength": 1.0
+  }
+ }
+}

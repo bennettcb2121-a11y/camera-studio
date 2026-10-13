@@ -1,0 +1,15 @@
+{
+ "id": "gritty-mono",
+ "name": "Gritty Mono",
+ "group": "Sport",
+ "description": "Hard black and white with strong local contrast.",
+ "order": 17,
+ "settings": {
+  "clarity": 45,
+  "sharpen": 20,
+  "lut": {
+   "name": "gritty-mono",
+   "strength": 1.0
+  }
+ }
+}

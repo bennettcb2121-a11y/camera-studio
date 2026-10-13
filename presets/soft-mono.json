@@ -1,0 +1,14 @@
+{
+ "id": "soft-mono",
+ "name": "Soft Mono",
+ "group": "Film",
+ "description": "Gentle, grey-toned black and white with lifted shadows.",
+ "order": 4,
+ "settings": {
+  "contrast": -5,
+  "lut": {
+   "name": "soft-mono",
+   "strength": 1.0
+  }
+ }
+}

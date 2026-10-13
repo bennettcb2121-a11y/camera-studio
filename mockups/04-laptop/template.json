@@ -1,0 +1,31 @@
+{
+ "name": "Laptop screen",
+ "slots": [
+  {
+   "corners": [
+    [
+     330,
+     190
+    ],
+    [
+     1270,
+     190
+    ],
+    [
+     1300,
+     760
+    ],
+    [
+     300,
+     760
+    ]
+   ]
+  }
+ ],
+ "blend": {
+  "mode": "normal",
+  "opacity": 1.0,
+  "fit": "cover"
+ },
+ "overlay": "overlay.png"
+}
