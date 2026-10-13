@@ -84,7 +84,9 @@ def _already_running(url: str) -> bool:
     import urllib.request
 
     try:
-        with urllib.request.urlopen(url + "/api/health", timeout=1.5) as r:
+        # never route a localhost check through an http_proxy from the environment
+        opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
+        with opener.open(url + "/api/health", timeout=3) as r:
             return bool(json.load(r).get("ok"))
     except Exception:
         return False
