@@ -472,8 +472,13 @@ def render_project(proj: dict, out_path: Path, aspect: str = "16:9", draft: bool
                 o.close()
             except Exception:
                 pass
+        # On Windows an FFmpeg reader may still hold a temp file for a moment; a leftover
+        # temp file is harmless, so never let cleanup fail the render.
         for f in tmpdir.glob("*"):
-            f.unlink(missing_ok=True)
+            try:
+                f.unlink()
+            except OSError:
+                pass
         try:
             tmpdir.rmdir()
         except OSError:
