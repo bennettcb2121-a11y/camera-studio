@@ -1,0 +1,15 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+node_modules/
+frontend/node_modules/
+.cache/
+*.db
+*.db-journal
+test_output/
+samples/*.ARW
+samples/*.MTS
+samples/*.MP4
+.DS_Store
