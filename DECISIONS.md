@@ -57,3 +57,16 @@ Choices made autonomously during the build, with reasons. Newest at the bottom.
     several times slower than the laptop); it is relaxed to 900 ms when `CI` is set and
     unchanged locally. On failure the workflow posts the pytest tail as a PR comment,
     because job logs need repo-admin auth that these sessions don't have.
+18. **Vignette sign = Lightroom** (negative darkens edges). Found when Opus asked for
+    "a soft vignette" with -28 and the edges got brighter. Flipped the pipeline and
+    stated the convention in the AI system prompt.
+19. **AI runs on Charlie's Claude login, not an API key.** The Claude Agent SDK
+    (`claude-agent-sdk`) ships its own `claude` binary, so `uv sync` installs it; the app
+    uses the login from `claude auth login` (run.sh offers it once). Model: Opus 5.5
+    (`claude-opus-5-5`, effort "medium"). The edit tools are in-process MCP tools, Research
+    uses Claude's built-in WebSearch rationed to 5 calls by a `can_use_tool` callback,
+    Best-of-N and the reel cut list use structured JSON output. claude.ai connectors and
+    user settings are switched off for these sessions (`strict_mcp_config`,
+    `setting_sources=[]`). The API-key path still works (`CCS_AI_BACKEND=api`).
+20. **Opus can look at its own work** (`view_photo` tool returns the current render as an
+    image), so Ask/Auto-edit are edit → look → refine loops instead of blind slider guesses.

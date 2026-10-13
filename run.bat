@@ -13,5 +13,7 @@ if errorlevel 1 (
 )
 echo Installing / checking Python and dependencies (first run takes a minute)...
 uv sync --frozen --quiet
+REM One-time Claude sign-in for the AI assistant (asks only if you're not signed in yet).
+uv run python -m backend.app.claude_login --ensure
 uv run python -m backend.app.main --open %*
 pause

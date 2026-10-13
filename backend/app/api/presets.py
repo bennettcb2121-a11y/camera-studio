@@ -41,6 +41,33 @@ def apply(body: ApplyIn):
     return {"settings": s.model_dump(), "history": sc.history_summary()}
 
 
+class ApplyManyIn(BaseModel):
+    paths: list[str]
+    preset_id: str | None
+    strength: float | None = None
+
+
+@router.post("/apply-many")
+def apply_many(body: ApplyManyIn):
+    """Apply (or remove) a filter on many photos at once; each gets its own undo entry."""
+    rec = get_preset(body.preset_id) if body.preset_id else None
+    if body.preset_id and not rec:
+        raise HTTPException(404, "preset not found")
+    done = []
+    for path in body.paths:
+        p = existing_file(path)
+        sc = Sidecar(p)
+        if rec:
+            s = apply_preset(sc.settings, body.preset_id, body.strength)
+            sc.set_settings(s, label=f"Filter: {rec['name']}")
+        else:
+            s = sc.settings.merged({"lut": {"name": None, "strength": 1.0}})
+            sc.set_settings(s, label="Remove filter")
+        library.update_item(str(p), has_edits=0 if s.is_identity() else 1)
+        done.append(str(p))
+    return {"applied": done}
+
+
 class SaveIn(BaseModel):
     name: str
     path: str | None = None

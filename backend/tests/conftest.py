@@ -19,6 +19,9 @@ _TMP = Path(tempfile.mkdtemp(prefix="ccs_test_"))
 os.environ["CCS_DATA_DIR"] = str(_TMP / "cache")
 os.environ["CCS_EXPORT_DIR"] = str(_TMP / "exports")
 os.environ.pop("ANTHROPIC_API_KEY", None)
+# Offline + deterministic by default: the API runner with no key = "AI unavailable".
+# Live tests build an AgentRunner explicitly (CCS_LIVE_AI=1).
+os.environ.setdefault("CCS_AI_BACKEND", "api")
 warnings.filterwarnings("ignore")
 
 from backend.tests import make_fixtures  # noqa: E402
@@ -85,7 +88,9 @@ def fake_ai():
     from backend.app.api import ai as ai_api
     from backend.tests.fake_anthropic import FakeAnthropic
 
+    from backend.app.services.ai import APIRunner
+
     fake = FakeAnthropic()
-    ai_api.service._client = fake
+    ai_api.service.runner = APIRunner(fake)
     yield fake
-    ai_api.service._client = None
+    ai_api.service.reset()

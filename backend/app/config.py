@@ -10,7 +10,13 @@ ROOT = Path(__file__).resolve().parents[2]
 load_dotenv(ROOT / ".env")
 
 # Claude model used by the AI assistant panel.
-CLAUDE_MODEL = os.environ.get("CCS_CLAUDE_MODEL", "claude-sonnet-5-5")
+CLAUDE_MODEL = os.environ.get("CCS_CLAUDE_MODEL", "claude-opus-5-5")
+# How the app reaches Claude:
+#   "claude" - through your Claude account login via the bundled Claude Code CLI (default, no key)
+#   "api"    - with ANTHROPIC_API_KEY
+#   "auto"   - Claude login if signed in, else the API key if set
+AI_BACKEND = os.environ.get("CCS_AI_BACKEND", "auto")
+AI_EFFORT = os.environ.get("CCS_AI_EFFORT", "medium")  # low | medium | high | xhigh | max
 
 DATA_DIR = Path(os.environ.get("CCS_DATA_DIR", ROOT / ".cache"))
 DATA_DIR.mkdir(parents=True, exist_ok=True)

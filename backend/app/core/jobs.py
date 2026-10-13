@@ -23,10 +23,11 @@ class Job:
     created: float = field(default_factory=time.time)
     finished: float | None = None
     cancel_requested: bool = False
+    live: dict | None = None  # latest intermediate state (e.g. settings the AI just applied)
 
     def to_dict(self) -> dict:
         return {"id": self.id, "kind": self.kind, "status": self.status, "progress": round(self.progress, 4),
-                "message": self.message, "result": self.result, "error": self.error, "created": self.created,
+                "message": self.message, "result": self.result, "live": self.live, "error": self.error, "created": self.created,
                 "finished": self.finished}
 
 

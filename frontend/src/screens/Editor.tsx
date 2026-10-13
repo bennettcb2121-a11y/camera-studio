@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { api } from '../api'
+import { api, type AIStatus } from '../api'
 import { isTyping, useStore } from '../store'
 import { ASPECTS, HSL_BANDS, defaultSettings, type EditSettings, type History, type Histogram as H, type PhotoInfo } from '../types'
 import Slider from '../components/Slider'
@@ -29,6 +29,7 @@ export default function Editor() {
   const [renderMs, setRenderMs] = useState(0)
   const [hslMode, setHslMode] = useState<'hue' | 'sat' | 'lum'>('sat')
   const stripRef = useRef<HTMLDivElement>(null)
+  const askRef = useRef<HTMLInputElement>(null)
 
   // ---- preview scheduling: latest request wins, never more than one in flight
   const inflight = useRef(false)
@@ -56,6 +57,7 @@ export default function Editor() {
     api.filterStrip(path).then((r) => setStrip(r.filters)).catch(() => {})
   }, [path, runPreview])
   useEffect(() => { load() }, [load])
+  const ai = useAI(path, (s) => { settingsRef.current = s; setSettingsState(s); runPreview(s, 2048) }, () => load())
 
   // live change (slider drag) vs commit (release → history entry + full-res preview)
   const change = (partial: Partial<EditSettings> | ((s: EditSettings) => EditSettings)) => {
@@ -119,8 +121,10 @@ export default function Editor() {
       else if (mod && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? redo() : undo() }
       else if (mod && e.key.toLowerCase() === 'c') { e.preventDefault(); copy() }
       else if (mod && e.key.toLowerCase() === 'v') { e.preventDefault(); paste() }
+      else if (mod && e.shiftKey && e.key.toLowerCase() === 'e') { e.preventDefault(); quickExport(store.selected.length > 1 ? store.selected : [path], useStore.getState()) }
       else if (mod && e.key.toLowerCase() === 'e') { e.preventDefault(); setExportOpen(true) }
       else if (mod) return
+      else if (e.key === '/') { e.preventDefault(); askRef.current?.focus() }
       else if (e.key === 'ArrowRight') { e.preventDefault(); cycleFilter(1) }
       else if (e.key === 'ArrowLeft') { e.preventDefault(); cycleFilter(-1) }
       else if (e.key === ']') movePhoto(1)
@@ -182,6 +186,7 @@ export default function Editor() {
             </div>
           )}
         </div>
+        <AskBar ai={ai} inputRef={askRef} />
         <div className="h-[118px] border-t border-zinc-800 shrink-0 flex flex-col">
           <div className="flex items-center px-3 pt-1 text-xs text-zinc-400 gap-3">
             <span className="panel-title">Filters</span><span>← → to cycle</span>
@@ -253,7 +258,7 @@ export default function Editor() {
               </Section>
             </div>
           )}
-          {tab === 'ai' && <AIPanel path={path} onApplied={() => load()} />}
+          {tab === 'ai' && <AIPanel ai={ai} />}
           {tab === 'history' && (
             <div>
               <div className={`px-2 py-1 rounded cursor-pointer text-xs ${history.index === -1 ? 'bg-zinc-800' : 'hover:bg-zinc-900'}`} onClick={async () => applyResult(await api.jump(path, -1))}>Original</div>
@@ -358,11 +363,23 @@ function ImageWithCrop({ src, cropMode, settings, onCrop, onCropCommit }: { src:
 }
 const clamp = (v: number, a: number, b: number) => Math.max(a, Math.min(b, v))
 
+interface ExportPrefs { format: string; quality: number; longEdge: string }
+export function exportPrefs(): ExportPrefs {
+  try { return { format: 'jpeg', quality: 92, longEdge: '', ...JSON.parse(localStorage.getItem('ccs-export') || '{}') } } catch { return { format: 'jpeg', quality: 92, longEdge: '' } }
+}
+export async function quickExport(paths: string[], store: ReturnType<typeof useStore.getState>) {
+  const p = exportPrefs()
+  const job = await api.exportPhotos(paths, p.format, p.quality, p.longEdge ? Number(p.longEdge) : null)
+  store.toast(`Exporting ${paths.length} photo${paths.length > 1 ? 's' : ''} (${p.format.toUpperCase()}${p.longEdge ? ', ' + p.longEdge + 'px' : ''})…`)
+  store.trackJob(job, (j) => store.toast(`Exported ${j.result.files.length} file(s) to ${j.result.out_dir}`))
+}
+
 function ExportModal({ paths, onClose }: { paths: string[]; onClose: () => void }) {
   const store = useStore()
-  const [format, setFormat] = useState('jpeg')
-  const [quality, setQuality] = useState(92)
-  const [longEdge, setLongEdge] = useState<string>('')
+  const init = exportPrefs()
+  const [format, setFormat] = useState(init.format)
+  const [quality, setQuality] = useState(init.quality)
+  const [longEdge, setLongEdge] = useState<string>(init.longEdge)
   return (
     <Modal title={`Export ${paths.length} photo${paths.length > 1 ? 's' : ''}`} onClose={onClose}>
       <div className="space-y-3 text-sm">
@@ -372,86 +389,133 @@ function ExportModal({ paths, onClose }: { paths: string[]; onClose: () => void 
         <div className="text-xs text-zinc-500">Files go to the <code>exports/</code> folder next to the app (original name + _edited).</div>
         <div className="flex justify-end gap-2"><button className="btn" onClick={onClose}>Cancel</button>
           <button className="btn-primary" onClick={async () => {
-            const job = await api.exportPhotos(paths, format, quality, longEdge ? Number(longEdge) : null)
-            onClose(); store.trackJob(job, (j) => store.toast(`Exported ${j.result.files.length} file(s) to ${j.result.out_dir}`))
+            try { localStorage.setItem('ccs-export', JSON.stringify({ format, quality, longEdge })) } catch { /* ignore */ }
+            onClose(); quickExport(paths, store)
           }}>Export</button></div>
+        <div className="text-[11px] text-zinc-500">These settings are remembered: <kbd>Shift+Cmd+E</kbd> exports straight away with them.</div>
       </div>
     </Modal>
   )
 }
 
-// ----------------------------------------------------------------------------- AI panel
-function AIPanel({ path, onApplied }: { path: string; onApplied: () => void }) {
+// ----------------------------------------------------------------------------- AI
+export interface AIRun { mode: string; note: string; busy: boolean; message: string; result: any | null }
+
+/** Owns AI runs for the editor: starts jobs, streams live edits into the preview, keeps the result. */
+function useAI(path: string, onLive: (s: EditSettings) => void, onDone: () => void) {
   const store = useStore()
-  const [status, setStatus] = useState<{ available: boolean; model: string; key_set: boolean; picks_logged: number } | null>(null)
-  const [note, setNote] = useState('')
-  const [busy, setBusy] = useState<string | null>(null)
-  const [progress, setProgress] = useState('')
-  const [result, setResult] = useState<any>(null)
-  useEffect(() => { api.aiStatus().then(setStatus).catch(() => setStatus({ available: false, model: '', key_set: false, picks_logged: 0 })) }, [])
-  const run = async (mode: string) => {
-    setBusy(mode); setResult(null); setProgress('Starting…')
+  const [status, setStatus] = useState<AIStatus | null>(null)
+  const [run, setRun] = useState<AIRun | null>(null)
+  const seq = useRef(0)
+  const refresh = (force = false) => api.aiStatus(force).then(setStatus).catch(() => setStatus(null))
+  useEffect(() => { refresh() }, [])
+  useEffect(() => { setRun(null) }, [path])
+  const start = async (mode: string, note = '') => {
+    if (run?.busy) return
+    setRun({ mode, note, busy: true, message: 'Claude is looking at the photo…', result: null })
+    seq.current = 0
     try {
       const job = await api.aiRun(path, mode, note)
-      const done = await store.trackJob(job)
-      setResult(done.result)
-      if (mode !== 'best_of_n' && mode !== 'critique') onApplied()
-      if (mode !== 'best_of_n') onApplied()
-    } catch (e: any) { setResult({ text: 'Failed: ' + e.message }) } finally { setBusy(null); setProgress('') }
+      const done = await store.trackJob(job, undefined, (j) => {
+        if (j.live && j.live.path === path && j.live.seq > seq.current) { seq.current = j.live.seq; onLive(j.live.settings) }
+        setRun((r) => r && { ...r, message: j.message || r.message })
+      })
+      setRun({ mode, note, busy: false, message: '', result: done.result })
+      if (mode === 'ask' && done.result?.text) store.toast('✦ ' + (done.result.text.length > 180 ? done.result.text.slice(0, 180) + '…' : done.result.text))
+      if (mode !== 'best_of_n' && mode !== 'critique') onDone()
+    } catch (e: any) {
+      setRun({ mode, note, busy: false, message: '', result: { text: 'Something went wrong: ' + e.message } })
+    }
   }
   const pick = async (chosen: any) => {
+    const result = run!.result
     const rejected = result.top.filter((t: any) => t !== chosen).concat(result.all.filter((a: any) => !result.top.some((t: any) => t.index === a.index)))
     await api.aiPick(path, chosen, rejected)
-    store.toast(`Applied "${chosen.name}" and logged your pick (${(status?.picks_logged ?? 0) + 1} so far)`)
+    store.toast(`Applied "${chosen.name}" — your pick is remembered for next time`)
     setStatus((s) => s && { ...s, picks_logged: s.picks_logged + 1 })
-    setResult(null); onApplied()
+    setRun(null); onDone()
   }
-  if (!status) return <div className="text-xs text-zinc-500">Checking for an API key…</div>
-  if (!status.available) return (
-    <div className="text-sm text-zinc-300 space-y-2">
-      <div className="font-medium">Add your Claude API key to use the assistant</div>
-      <ol className="list-decimal ml-4 text-zinc-400 space-y-1 text-xs">
-        <li>Get a key at console.anthropic.com</li>
-        <li>Copy <code>.env.example</code> to <code>.env</code> in the app folder</li>
-        <li>Paste the key after <code>ANTHROPIC_API_KEY=</code></li>
-        <li>Restart the app (./run.sh or run.bat)</li>
-      </ol>
+  return { status, refresh, run, start, pick, clear: () => setRun(null) }
+}
+
+function AskBar({ ai, inputRef }: { ai: ReturnType<typeof useAI>; inputRef: React.RefObject<HTMLInputElement | null> }) {
+  const [text, setText] = useState('')
+  const ready = ai.status?.available
+  const busy = ai.run?.busy
+  const submit = () => { if (text.trim() && ready && !busy) { ai.start('ask', text.trim()); setText('') } }
+  return (
+    <div className="h-11 border-t border-zinc-800 shrink-0 flex items-center gap-2 px-3 bg-zinc-950">
+      <span className="text-purple-300 text-sm">✦</span>
+      <input ref={inputRef} value={text} onChange={(e) => setText(e.target.value)} disabled={!ready || busy}
+        onKeyDown={(e) => { if (e.key === 'Enter') submit(); if (e.key === 'Escape') (e.target as HTMLInputElement).blur() }}
+        placeholder={!ai.status ? 'Connecting to Claude…' : !ready ? 'Sign in to Claude to use the assistant (see the AI tab)' : busy ? ai.run!.message : 'Ask Claude to edit… e.g. “moodier, crop for Instagram, keep skin natural”   ( / )'}
+        className="flex-1 bg-transparent outline-none text-sm placeholder:text-zinc-500 disabled:cursor-not-allowed" />
+      {busy && <span className="w-3 h-3 rounded-full border-2 border-purple-300 border-t-transparent animate-spin" />}
+      <button className="btn !py-0.5" disabled={!ready || busy || !text.trim()} onClick={submit}>Send ⏎</button>
     </div>
   )
+}
+
+function AIPanel({ ai }: { ai: ReturnType<typeof useAI> }) {
+  const { status, run } = ai
+  if (!status) return <div className="text-xs text-zinc-500">Connecting to Claude…</div>
+  if (!status.available) return (
+    <div className="text-sm text-zinc-300 space-y-2">
+      <div className="font-medium">Sign in to Claude to use the assistant</div>
+      <div className="text-xs text-zinc-400">It runs {status.model.replace('claude-', '').replace(/-/g, ' ')} on your Claude account — no API key needed. Once, in Terminal, in the app folder:</div>
+      <pre className="text-[11px] bg-zinc-900 rounded p-2 whitespace-pre-wrap">uv run python -m backend.app.claude_login</pre>
+      <button className="btn" onClick={() => ai.refresh(true)}>I've signed in — retry</button>
+    </div>
+  )
+  const modes: [string, string, string][] = [
+    ['auto_edit', 'Auto-edit', 'Opus edits, checks, explains'], ['critique', 'Critique', 'What works, what to fix'],
+    ['research', 'Research', 'Web-search the genre, save a preset'], ['best_of_n', 'Best-of-N', 'Compare 5 edits, pick one'],
+  ]
   return (
     <div className="space-y-3">
-      <div className="text-[11px] text-zinc-500">{status?.model} · {status?.picks_logged ?? 0} taste picks logged</div>
-      <textarea className="w-full bg-zinc-900 border border-zinc-800 rounded p-2 text-xs h-16" placeholder="Optional note for Claude (e.g. 'keep it natural', 'moody film look')" value={note} onChange={(e) => setNote(e.target.value)} />
+      <div className="text-[11px] text-zinc-500">
+        {status.model.replace('claude-', 'Claude ').replace(/-(\d)-(\d)$/, ' $1.$2')} · {status.backend === 'claude' ? `Claude account${status.account ? ' ' + status.account : ''}` : 'API key'} · {status.picks_logged} taste picks
+      </div>
       <div className="grid grid-cols-2 gap-1">
-        {[['critique', 'Critique', 'Explain issues, no edits'], ['auto_edit', 'Auto-edit', 'Apply an edit, explain each change'], ['research', 'Research', 'Web-search the genre, save a preset'], ['best_of_n', 'Best-of-N', 'Compare 5 edits, pick your favourite']].map(([m, l, d]) => (
-          <button key={m} className="btn text-left !py-1.5" disabled={!!busy} onClick={() => run(m)} title={d}><div className="font-medium">{busy === m ? '… working' : l}</div><div className="text-[10px] text-zinc-500">{d}</div></button>
+        {modes.map(([m, l, d]) => (
+          <button key={m} className="btn text-left !py-1.5" disabled={!!run?.busy} onClick={() => ai.start(m)} title={d}>
+            <div className="font-medium">{run?.busy && run.mode === m ? '… working' : l}</div><div className="text-[10px] text-zinc-500">{d}</div>
+          </button>
         ))}
       </div>
-      {busy && <div className="text-xs text-blue-300 animate-pulse">{progress || 'Claude is looking at the photo…'}</div>}
-      {result && (
-        <div className="space-y-2">
-          {result.text && <div className="text-xs whitespace-pre-wrap text-zinc-200 bg-zinc-900 rounded p-2">{result.text}</div>}
-          {result.actions?.length > 0 && (
-            <div className="text-xs text-zinc-400 space-y-1">
-              {result.actions.map((a: any, i: number) => <div key={i}>• {a.label}{a.delta ? ': ' + Object.entries(a.delta).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', ') : ''}{a.template_ids ? ': ' + a.template_ids.join(', ') : ''}</div>)}
-            </div>
-          )}
-          {result.sources?.length > 0 && <div className="text-[11px] text-zinc-500">Sources: {result.sources.map((s: string, i: number) => <a key={i} href={s} target="_blank" className="underline mr-1">{new URL(s).hostname}</a>)}</div>}
-          {result.preset && <div className="text-xs text-green-300">Saved preset "{result.preset.name}" — it's in the filter strip.</div>}
-          {result.top && (
-            <div className="space-y-2">
-              <div className="panel-title">Top 3 — pick one</div>
-              {result.top.map((t: any) => (
-                <div key={t.index} className="bg-zinc-900 rounded overflow-hidden">
-                  <img src={`data:image/jpeg;base64,${t.image_b64}`} className="w-full" />
-                  <div className="p-2 text-xs"><div className="font-medium">{t.name}</div><div className="text-zinc-400">{t.verdict || t.rationale}</div>
-                    <button className="btn-primary mt-1 !text-xs" onClick={() => pick(t)}>Use this</button></div>
-                </div>
-              ))}
-            </div>
-          )}
+      <div className="text-[11px] text-zinc-500">Or type any request in the ✦ bar under the photo (press <kbd>/</kbd>). Every AI change is in History and undoable.</div>
+      {run?.busy && <div className="text-xs text-purple-300 animate-pulse">{run.message}</div>}
+      {run?.result && <AIResult run={run} ai={ai} />}
+    </div>
+  )
+}
+
+function AIResult({ run, ai }: { run: AIRun; ai: ReturnType<typeof useAI> }) {
+  const r = run.result
+  return (
+    <div className="space-y-2">
+      {run.note && <div className="text-xs text-zinc-500 italic">“{run.note}”</div>}
+      {r.text && <div className="text-xs whitespace-pre-wrap text-zinc-200 bg-zinc-900 rounded p-2">{r.text}</div>}
+      {r.actions?.length > 0 && (
+        <div className="text-[11px] text-zinc-400 space-y-0.5">
+          {r.actions.map((a: any, i: number) => <div key={i}>• {a.label}{a.template_ids ? ': ' + a.template_ids.join(', ') : ''}</div>)}
         </div>
       )}
+      {r.sources?.length > 0 && <div className="text-[11px] text-zinc-500">Sources: {r.sources.slice(0, 6).map((s: string, i: number) => { let h = s; try { h = new URL(s).hostname } catch { /* keep */ } return <a key={i} href={s} target="_blank" className="underline mr-1">{h}</a> })}</div>}
+      {r.preset && <div className="text-xs text-green-300">Saved preset “{r.preset.name}” — it's in the filter strip.</div>}
+      {r.top && (
+        <div className="space-y-2">
+          <div className="panel-title">Top 3 — pick one</div>
+          {r.top.map((t: any) => (
+            <div key={t.index} className="bg-zinc-900 rounded overflow-hidden">
+              <img src={`data:image/jpeg;base64,${t.image_b64}`} className="w-full" />
+              <div className="p-2 text-xs"><div className="font-medium">{t.name}</div><div className="text-zinc-400">{t.verdict || t.rationale}</div>
+                <button className="btn-primary mt-1 !text-xs" onClick={() => ai.pick(t)}>Use this</button></div>
+            </div>
+          ))}
+        </div>
+      )}
+      <button className="btn !text-xs" onClick={ai.clear}>Clear</button>
     </div>
   )
 }

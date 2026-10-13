@@ -143,3 +143,10 @@ def test_lut_in_folder_with_apostrophe_and_space(videos, tmp_path):
     out = d / "out clip.mp4"
     V.apply_look_ffmpeg(videos[0], cube, 0.0, 1.0, out, height=360)
     assert out.exists() and probe(str(out))["height"] == 360
+
+
+def test_thumbnails_for_every_container(videos):
+    """Regression: .MTS (AVCHD, limited-range YUV) thumbnails used to come back empty."""
+    for v in videos:
+        data = V.clip_thumbnail(v, 0.5)
+        assert len(data) > 500 and data[:2] == b"\xff\xd8", v.name

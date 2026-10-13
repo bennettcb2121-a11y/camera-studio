@@ -32,6 +32,13 @@ def msg(blocks, stop="end_turn"):
     return NS(content=blocks, stop_reason=stop, model="fake", usage=NS(input_tokens=1, output_tokens=1))
 
 
+def _tr_text(c):
+    """tool_result content is a JSON string, or [image, text] blocks for view_photo."""
+    if isinstance(c, list):
+        return next((b.get("text", "") for b in c if isinstance(b, dict) and b.get("type") == "text"), "")
+    return c or ""
+
+
 class _Messages:
     def __init__(self, parent):
         self.parent = parent
@@ -63,7 +70,8 @@ class _Messages:
                                                    "segments": [{"start": 0.2, "end": 2.0}, {"start": 2.2, "end": 3.6, "speed": 0.5}, {"start": 4.0, "end": 5.5}]})], "tool_use")
 
         if has_tool_result:  # second turn of an agentic loop
-            results = [json.loads(b["content"]) for b in content if isinstance(b, dict) and b.get("type") == "tool_result" and b["content"].startswith("{")]
+            results = [json.loads(_tr_text(b["content"])) for b in content if isinstance(b, dict) and b.get("type") == "tool_result"
+                       and _tr_text(b["content"]).startswith("{")]
             errs = [r for r in results if not r.get("ok", True)]
             if "web_search" in tools and not self.parent.saved_preset:
                 self.parent.saved_preset = True
@@ -77,6 +85,10 @@ class _Messages:
             return msg([text("Done. I lifted exposure by +0.4 EV to open the shadows, pulled highlights down to keep the sky, "
                              "and added a touch of vibrance." + s)])
 
+        if "Mode: ASK" in user_text and "set_adjustments" in tools:
+            return msg([tool_use("set_adjustments", {"adjustments": {"exposure": -0.3, "contrast": 20, "vignette": 25},
+                                                     "reason": "Moodier: darker, more contrast, vignette"}),
+                        tool_use("view_photo", {})], "tool_use")
         if "CRITIQUE" in user_text:
             return msg([text("- Exposure: slightly under; the midtones sit around 0.25.\n- Colour: neutral, no cast.\n"
                              "- Composition: busy foreground; a tighter 4:5 crop would help.\n- Sharpness: fine at ISO 100.")])

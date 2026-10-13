@@ -68,7 +68,10 @@ export const api = {
     return r.json() as Promise<{ path: string; width: number; height: number }>
   },
   // ai
-  aiStatus: () => j<{ available: boolean; model: string; key_set: boolean; picks_logged: number }>('/api/ai/status'),
+  aiStatus: (refresh = false) => j<AIStatus>('/api/ai/status' + (refresh ? '?refresh=true' : '')),
+  aiBatch: (paths: string[], mode: string, note: string) => post<Job>('/api/ai/batch', { paths, mode, note }),
+  autoMany: (paths: string[]) => post<Job>('/api/photos/auto-many', { paths }),
+  applyPresetMany: (paths: string[], preset_id: string | null) => post<{ applied: string[] }>('/api/presets/apply-many', { paths, preset_id }),
   aiRun: (path: string, mode: string, note: string, n = 5) => post<Job>('/api/ai/run', { path, mode, note, n }),
   aiPick: (path: string, chosen: any, rejected: any[]) => post<{ settings: EditSettings; history: History }>('/api/ai/pick', { path, chosen, rejected }),
   aiReel: (project_id: string, clip_src: string, target_seconds: number, note = '') => post<Job>('/api/ai/reel', { project_id, clip_src, target_seconds, note }),
@@ -96,6 +99,8 @@ export const api = {
   music: (pid: string, body: any) => post<VideoProject>(`/api/video/projects/${pid}/music`, body),
   render: (pid: string, aspect: string, draft: boolean) => post<Job>(`/api/video/projects/${pid}/render`, { aspect, draft }),
 }
+
+export interface AIStatus { available: boolean; backend: string; model: string; claude_logged_in: boolean; account?: string | null; key_set: boolean; picks_logged: number }
 
 export function waitJob(id: string, onProgress?: (j: Job) => void): Promise<Job> {
   return new Promise((resolve, reject) => {

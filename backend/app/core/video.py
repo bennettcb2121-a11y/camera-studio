@@ -75,10 +75,17 @@ def ensure_proxy(src: Path, progress=None) -> Path:
 
 
 def clip_thumbnail(src: Path, t: float = 0.5, width: int = 320) -> bytes:
-    r = subprocess.run([ffmpeg.ffmpeg_exe(), "-hide_banner", "-loglevel", "error", "-ss", f"{max(0, t):.3f}", "-i", str(src),
-                        "-frames:v", "1", "-vf", f"scale={width}:-2", "-f", "image2", "-c:v", "mjpeg", "-"],
-                       capture_output=True)
-    return r.stdout
+    """One JPEG frame. Fast input-side seek first; MPEG-TS (.MTS/AVCHD) timestamps don't
+    start at 0, so fall back to an accurate output-side seek when that finds no frame."""
+    def grab(seek_before_input: bool) -> bytes:
+        ss = ["-ss", f"{max(0.0, t):.3f}"]
+        cmd = [ffmpeg.ffmpeg_exe(), "-hide_banner", "-loglevel", "error", *(ss if seek_before_input else []), "-i", str(src),
+               *([] if seek_before_input else ss), "-frames:v", "1", "-vf", f"scale={width}:-2",
+               # AVCHD is tagged limited ("TV") range, which FFmpeg's JPEG encoder refuses by default
+               "-strict", "unofficial", "-f", "image2", "-c:v", "mjpeg", "-"]
+        return subprocess.run(cmd, capture_output=True).stdout
+
+    return grab(True) or grab(False)
 
 
 def probe(src: Path) -> dict:
@@ -278,7 +285,7 @@ def contact_sheet(src: Path, fps: float = 1.0, thumb_w: int = 240, cols: int = 6
     """Sample 1 frame/second into a labelled grid JPEG. Returns (jpeg bytes, timestamps)."""
     proxy = ensure_proxy(src)
     tmp = Path(tempfile.mkdtemp(prefix="ccs_sheet_"))
-    r = ffmpeg.run(["-i", str(proxy), "-vf", f"fps={fps},scale={thumb_w}:-2", str(tmp / "f%04d.jpg")])
+    r = ffmpeg.run(["-i", str(proxy), "-vf", f"fps={fps},scale={thumb_w}:-2", "-strict", "unofficial", str(tmp / "f%04d.jpg")])
     frames = sorted(tmp.glob("f*.jpg"))
     if not frames:
         raise RuntimeError(f"no frames sampled: {r.stderr[-300:]}")

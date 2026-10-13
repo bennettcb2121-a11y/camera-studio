@@ -1,7 +1,8 @@
 # Charlie's Camera Studio
 
 A personal photo + video editor for the Sony a6000. Runs locally on a Mac or Windows
-laptop, one user, no accounts, no cloud (the only network use is the optional Claude API).
+laptop, one user, no accounts, no cloud. The AI assistant runs **Claude Opus 5.5 on your
+Claude account login** — no API key needed.
 
 - **Inputs:** `.ARW` raw (24 MP), `.JPG`, video `.MTS` (AVCHD) and `.MP4` up to 1080p.
 - **Originals are never modified.** Every edit lives in a JSON sidecar
@@ -21,6 +22,9 @@ machine had: **[ENVIRONMENT.md](ENVIRONMENT.md)**.
 ### Library
 - Add any folder (native folder dialog on Mac/Windows, or the in-app browser). Subfolders
   are scanned; the index is SQLite in `.cache/library.db`.
+- **Action bar for a whole shoot:** select several photos (Shift/Cmd-click, Cmd+A) and
+  apply ✨ Auto, any filter, a ✦ Claude edit ("make these warmer and consistent") or export
+  them all in one go.
 - Thumbnails (raw files use the embedded camera JPEG), star ratings, filter by
   photo/video and minimum rating, sort by name/date/rating, multi-select
   (Shift / Cmd-click).
@@ -70,23 +74,30 @@ machine had: **[ENVIRONMENT.md](ENVIRONMENT.md)**.
   spread. **New template…** lets you drag four corners onto any image (upload or a
   library photo) and save it.
 
-### AI assistant (Claude)
-Each request sends a ~1500 px JPEG of the current edit, EXIF (ISO, shutter, aperture,
-lens, focal length), histogram stats, the current settings, the filter list and your
-taste profile. Claude has the tools `set_adjustments`, `apply_filter`, `crop`,
-`suggest_mockups` and `save_preset`; tool calls are applied through the normal edit path,
-so you watch the photo change and **every AI edit is in the undo history** (marked "AI").
+### AI assistant (Claude Opus 5.5, no API key)
+The assistant runs Opus 5.5 through **your Claude account** (the same login as Claude /
+Claude Code) via the Claude Agent SDK, whose `claude` binary is installed by `uv sync`.
+`./run.sh` asks you to sign in once; after that there's nothing to configure.
 
+- **✦ Ask bar** under the photo (press `/`): type anything — "moodier, crop 4:5 for
+  Instagram, keep skin natural" — and press Enter. You watch the photo change as Opus
+  applies each edit; it looks at its own result (`view_photo`) and refines before
+  replying with what it changed.
+- **Auto-edit** – edits, checks, explains each change.
 - **Critique** – strengths, problems, what to change; no edits.
-- **Auto-edit** – applies an edit and explains each change.
-- **Research** – uses the API's web search tool (max 5 searches) to learn how
-  photographers edit this genre/light, applies a fitting edit, saves a preset with notes
-  and source URLs.
-- **Best-of-N** – asks for 4–6 genuinely different edits, renders them, shows Claude a
-  side-by-side sheet to rank, shows you the top 3. Your pick is applied and logged to
-  `.cache/ai_preferences.json`, which is included in future requests so it learns your taste.
-- Without an API key the panel shows how to add one. The model name is in
-  `backend/app/config.py` (`CLAUDE_MODEL`, overridable with `CCS_CLAUDE_MODEL`).
+- **Research** – web-searches (max 5) how photographers edit this genre/light, applies a
+  fitting edit, saves a preset with notes and source links.
+- **Best-of-N** – 4–6 genuinely different edits rendered side by side; Opus ranks them,
+  you pick from the top 3. Picks are logged to `.cache/ai_preferences.json` and included
+  in future requests so it learns your taste.
+- **Batch** – from the Library action bar, run Ask/Auto-edit over many photos.
+
+Each request sends a ~1500 px JPEG of the current edit, EXIF, histogram stats, current
+settings, the filter list and your taste profile. Claude's tools are `set_adjustments`,
+`apply_filter`, `crop`, `view_photo`, `suggest_mockups`, `save_preset`; every AI change is
+a normal history entry (marked "AI") so it's undoable. Model and backend live in
+`backend/app/config.py` (`CCS_CLAUDE_MODEL`, `CCS_AI_EFFORT`, and `CCS_AI_BACKEND=api` to
+use an `ANTHROPIC_API_KEY` instead of the login).
 
 ### Video
 - Add clips from the library; a 720p H.264 proxy is made for playback (this is also what
@@ -126,6 +137,7 @@ queue; the **Jobs** button in the header shows progress and results.
 | `A` / `R` / `C` / `Esc` | Edit | Auto / Reset / Crop tool / leave crop |
 | `Cmd/Ctrl+C`, `Cmd/Ctrl+V` | Edit | Copy settings / paste onto the selected photos |
 | `Cmd/Ctrl+E` | Edit, Mockups, Video | Export |
+| `Shift+Cmd/Ctrl+E` | Edit | Export right away with your last export settings |
 | double-click a slider label | Edit | Reset that slider |
 | `←` `→` / `↑` `↓` / `F` | Mockups | Next mockup / next photo / favourite |
 | `Space` | Video | Play / pause |
@@ -149,7 +161,8 @@ uv run pytest -q    # backend tests (generates synthetic fixtures into ./samples
   for a dev server with API proxy, `npm run build` to refresh the committed `frontend/dist`.
 - Regenerate the built-in filters / mockups: `uv run python -m backend.app.core.presets`,
   `uv run python -m backend.app.core.mockups`.
-- `.env` holds `ANTHROPIC_API_KEY` (copy `.env.example`; `.env` is git-ignored).
+- Claude sign-in: `uv run python -m backend.app.claude_login` (run.sh offers it once).
+  Live AI tests: `CCS_LIVE_AI=1 uv run pytest -k live`.
 - Caches (proxies, thumbnails, video proxies, library DB, user presets, AI preferences)
   live in `.cache/`; delete it any time.
 

@@ -77,6 +77,14 @@ def test_builtin_luts_load():
         assert load_lut(n) is not None
 
 
+def test_vignette_follows_lightroom_sign():
+    x = np.full((60, 90, 3), 0.3, np.float32)
+    dark = render(x, EditSettings(vignette=-50))
+    light = render(x, EditSettings(vignette=50))
+    assert dark[0, 0, 0] < 0.3 < light[0, 0, 0]
+    assert abs(dark[30, 45, 0] - 0.3) < 0.01  # centre untouched
+
+
 def test_crop_aspect_presets():
     r = crop_rect_for_aspect(6000, 4000, "1:1")
     assert abs(r["w"] * 6000 - r["h"] * 4000) < 1

@@ -133,6 +133,29 @@ def auto(body: PathIn):
     return {"settings": s.model_dump(), "history": sc.history_summary()}
 
 
+class PathsIn(BaseModel):
+    paths: list[str]
+
+
+@router.post("/auto-many")
+def auto_many(body: PathsIn):
+    """Auto on many photos as one background job (Library action bar)."""
+    paths = [existing_file(p) for p in body.paths]
+
+    def work(ctx: jobs.JobContext):
+        for i, p in enumerate(paths):
+            if ctx.cancelled:
+                break
+            ctx.progress(i / len(paths), f"Auto: {p.name}")
+            sc = Sidecar(p)
+            proxy, _, _ = proxy_cache.get(p)
+            sc.set_settings(auto_settings(proxy, read_exif(p), sc.settings), label="Auto")
+            library.update_item(str(p), has_edits=1)
+        return {"count": len(paths)}
+
+    return jobs.queue.submit("auto", work).to_dict()
+
+
 class CopyIn(BaseModel):
     source: str
     targets: list[str]

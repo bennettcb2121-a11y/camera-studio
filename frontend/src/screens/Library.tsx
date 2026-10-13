@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { api } from '../api'
 import { isTyping, useStore } from '../store'
 import FolderBrowser from '../components/FolderBrowser'
+import { quickExport } from './Editor'
 
 export default function Library() {
   const s = useStore()
@@ -72,7 +73,8 @@ export default function Library() {
         </select>
         <div className="text-xs text-zinc-500 mt-auto">{s.items.length} items · {s.selected.length} selected</div>
       </aside>
-      <section id="grid" className="flex-1 overflow-auto p-3">
+      <section id="grid" className="flex-1 overflow-auto p-3 pt-0">
+        <ActionBar />
         {!s.folders.length && (
           <div className="h-full flex flex-col items-center justify-center text-zinc-500 gap-3">
             <div className="text-lg">No folders yet</div>
@@ -112,5 +114,37 @@ export function Stars({ value, onChange }: { value: number; onChange: (r: number
     <span className="text-[11px] leading-none whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
       {[1, 2, 3, 4, 5].map((r) => <span key={r} className={`cursor-pointer ${r <= value ? 'text-yellow-400' : 'text-zinc-700 hover:text-zinc-400'}`} onClick={() => onChange(r === value ? 0 : r)}>★</span>)}
     </span>
+  )
+}
+
+/** Bulk actions on the selected photos — the fast path for a whole shoot. */
+function ActionBar() {
+  const s = useStore()
+  const photos = s.selected.filter((p) => s.items.find((i) => i.path === p)?.kind === 'photo')
+  const [busy, setBusy] = useState(false)
+  if (!photos.length) return <div className="h-3" />
+  const n = photos.length
+  const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn() } catch (e: any) { s.toast(e.message, 'error') } finally { setBusy(false); s.loadItems() } }
+  return (
+    <div className="sticky top-0 z-10 -mx-3 mb-3 px-3 py-2 bg-zinc-950/95 backdrop-blur border-b border-zinc-800 flex items-center gap-2 text-sm">
+      <span className="text-zinc-300">{n} photo{n > 1 ? 's' : ''} selected</span>
+      <span className="text-zinc-600 text-xs">(Shift/Cmd-click to add, Cmd+A for all)</span>
+      <div className="flex-1" />
+      <button className="btn" disabled={busy} onClick={() => run(async () => { await s.trackJob(await api.autoMany(photos)); s.toast(`Auto applied to ${n}`) })}>✨ Auto</button>
+      <select className="bg-zinc-800 rounded px-2 py-1 text-sm" value="" disabled={busy} onChange={(e) => { const id = e.target.value; if (!id) return
+        run(async () => { await api.applyPresetMany(photos, id === '__none' ? null : id); s.toast(id === '__none' ? `Filter removed from ${n}` : `Filter applied to ${n}`) }) }}>
+        <option value="">Filter…</option><option value="__none">— remove filter —</option>
+        {s.presets.map((p) => <option key={p.id} value={p.id}>{p.group}: {p.name}</option>)}
+      </select>
+      <button className="btn" disabled={busy || !s.aiAvailable} title={s.aiAvailable ? 'Opus edits each photo' : 'Sign in to Claude first (see the AI tab)'} onClick={() => {
+        const note = window.prompt(`✦ Ask Claude to edit ${n} photo${n > 1 ? 's' : ''} (leave empty for a general Auto-edit):`, '')
+        if (note === null) return
+        run(async () => { const job = await api.aiBatch(photos, note.trim() ? 'ask' : 'auto_edit', note.trim())
+          s.toast(`Claude is editing ${n} photo${n > 1 ? 's' : ''} — progress under Jobs`)
+          const j = await s.trackJob(job); const ok = j.result.results.filter((r: any) => r.ok).length; s.toast(`Claude edited ${ok}/${n}`) })
+      }}>✦ AI edit…</button>
+      <button className="btn-primary" disabled={busy} onClick={() => quickExport(photos, useStore.getState())} title="Uses your last export settings">Export {n}</button>
+      <button className="btn" onClick={() => useStore.setState({ selected: [] })}>✕</button>
+    </div>
   )
 }

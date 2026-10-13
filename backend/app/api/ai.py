@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from pathlib import Path
-
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from ..config import CLAUDE_MODEL, anthropic_api_key
+from ..config import AI_BACKEND, CLAUDE_MODEL, anthropic_api_key
 from ..core import jobs, library
 from ..core.settings_schema import EditSettings
 from ..core.sidecar import Sidecar
@@ -15,14 +13,25 @@ from .common import existing_file
 
 router = APIRouter(prefix="/api/ai", tags=["ai"])
 
-# A module-level service so tests can swap in a fake client.
+# A module-level service so tests can swap the runner.
 service = AIService()
+
+NOT_READY = ("The AI assistant uses your Claude account. Sign in once by running "
+             "`uv run python -m backend.app.claude_login` in the app folder (or restart with ./run.sh), "
+             "then click Retry. Alternatively put ANTHROPIC_API_KEY in .env.")
 
 
 @router.get("/status")
-def status():
-    return {"available": service.available, "model": CLAUDE_MODEL, "key_set": anthropic_api_key() is not None,
-            "picks_logged": len(load_preferences().get("picks", []))}
+def status(refresh: bool = False):
+    from ..claude_login import auth_status
+
+    if refresh:
+        auth_status(max_age=0)
+        service.reset()
+    login = auth_status()
+    return {"available": service.available, "backend": getattr(service.runner, "name", "?"), "configured": AI_BACKEND,
+            "model": CLAUDE_MODEL, "claude_logged_in": bool(login.get("loggedIn")), "account": login.get("email"),
+            "key_set": anthropic_api_key() is not None, "picks_logged": len(load_preferences().get("picks", []))}
 
 
 class RunIn(BaseModel):
@@ -32,30 +41,67 @@ class RunIn(BaseModel):
     n: int = 5
 
 
+def _run_one(path, mode: str, note: str, n: int, ctx: jobs.JobContext, frac0: float = 0.0, span: float = 1.0) -> dict:
+    """Run one mode on one photo; every committed edit is published on the job so the UI can re-render live."""
+    edits = {"n": 0}
+
+    def on_change(settings: EditSettings, label: str):
+        edits["n"] += 1
+        ctx.job.live = {"path": str(path), "settings": settings.model_dump(), "label": label, "seq": edits["n"]}
+        ctx.progress(frac0 + span * min(0.9, 0.2 + 0.15 * edits["n"]), f"{path.name}: {label}")
+
+    ctx.progress(frac0 + 0.05 * span, f"{path.name}: Claude is looking at the photo")
+    session = EditSession(path, on_change=on_change)
+    res = service.run_mode(mode, session, note, n=max(4, min(6, n)),
+                           progress=lambda f, m: ctx.progress(frac0 + span * f, m))
+    library.update_item(str(path), has_edits=0 if session.settings.is_identity() else 1)
+    res["history"] = session.sidecar.history_summary()
+    res["path"] = str(path)
+    return res
+
+
 @router.post("/run")
 def run(body: RunIn):
     if body.mode not in MODES:
         raise HTTPException(400, f"mode must be one of {MODES}")
+    if body.mode == "ask" and not body.note.strip():
+        raise HTTPException(400, "Type what you'd like Claude to do")
     if not service.available:
-        raise HTTPException(409, "No ANTHROPIC_API_KEY set. Add it to .env (see .env.example) and restart.")
+        raise HTTPException(409, NOT_READY)
     p = existing_file(body.path)
+    return jobs.queue.submit(f"ai-{body.mode}", lambda ctx: _run_one(p, body.mode, body.note, body.n, ctx)).to_dict()
+
+
+class BatchIn(BaseModel):
+    paths: list[str]
+    mode: str = "auto_edit"  # auto_edit | ask
+    note: str = ""
+
+
+@router.post("/batch")
+def batch(body: BatchIn):
+    """Run an AI edit over many photos (one after the other, in one background job)."""
+    if body.mode not in ("auto_edit", "ask"):
+        raise HTTPException(400, "batch mode must be auto_edit or ask")
+    if body.mode == "ask" and not body.note.strip():
+        raise HTTPException(400, "Type what you'd like Claude to do")
+    if not service.available:
+        raise HTTPException(409, NOT_READY)
+    paths = [existing_file(p) for p in body.paths]
 
     def work(ctx: jobs.JobContext):
-        ctx.progress(0.05, "Preparing preview")
-        session = EditSession(p)
-        if body.mode == "critique":
-            res = service.critique(session, body.note)
-        elif body.mode == "auto_edit":
-            res = service.auto_edit(session, body.note)
-        elif body.mode == "research":
-            res = service.research(session, body.note)
-        else:
-            res = service.best_of_n(session, body.note, n=max(4, min(6, body.n)), progress=ctx.progress)
-        library.update_item(str(p), has_edits=0 if session.settings.is_identity() else 1)
-        res["history"] = session.sidecar.history_summary()
-        return res
+        out = []
+        for i, p in enumerate(paths):
+            if ctx.cancelled:
+                break
+            try:
+                res = _run_one(p, body.mode, body.note, 5, ctx, i / len(paths), 1 / len(paths))
+                out.append({"path": str(p), "ok": True, "text": res["text"]})
+            except Exception as e:  # one bad photo must not stop the batch
+                out.append({"path": str(p), "ok": False, "text": str(e)})
+        return {"results": out}
 
-    return jobs.queue.submit(f"ai-{body.mode}", work).to_dict()
+    return jobs.queue.submit("ai-batch", work).to_dict()
 
 
 class PickIn(BaseModel):
@@ -92,12 +138,12 @@ class ReelIn(BaseModel):
 @router.post("/reel")
 def reel(body: ReelIn):
     if not service.available:
-        raise HTTPException(409, "No ANTHROPIC_API_KEY set.")
+        raise HTTPException(409, NOT_READY)
     src = existing_file(body.clip_src)
     proj = load_project(body.project_id)
 
     def work(ctx: jobs.JobContext):
-        from ..core.video import add_video_clip, add_title_clip, probe
+        from ..core.video import add_title_clip, add_video_clip, probe
 
         ctx.progress(0.1, "Sampling frames")
         sheet, ts = contact_sheet(src)

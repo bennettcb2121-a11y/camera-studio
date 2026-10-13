@@ -34,15 +34,12 @@ cd "Charlie's Camera Studio"
 (`git` is preinstalled on Mac; on Windows install it from https://git-scm.com or
 download the repository as a ZIP from GitHub and unzip it.)
 
-## 3. Your Claude API key (only for the AI panel)
+## 3. Claude for the AI panel — no API key
 
-1. Create a key at https://console.anthropic.com/ (API keys).
-2. In the app folder, copy `.env.example` to `.env`
-   (Mac: `cp .env.example .env`; Windows: `copy .env.example .env`).
-3. Open `.env` in any text editor and paste the key after `ANTHROPIC_API_KEY=`.
-
-`.env` is ignored by git, so the key never gets committed. Without a key every
-other feature works; the AI tab just shows these instructions.
+The AI assistant runs Claude Opus 5.5 on **your Claude account**. The first time you
+start the app, `run.sh` / `run.bat` asks *"Sign in to Claude now?"* — press Enter and
+log in in the browser window that opens. That's it, once per laptop. (If you skip it, do
+it later with `uv run python -m backend.app.claude_login`.)
 
 ## 4. 🟢 Start the app
 
@@ -85,9 +82,9 @@ That pushes `main` and `build/v1` and opens the "create pull request" page. Past
 | 2. Raw opens, sliders fast, export = preview (<2%) | ✅ With one real ILCE-6000 ARW from raw.pixls.us | `uv run pytest -q -k "preview_under_150ms or export_matches"` |
 | 3. 25 filters + Auto on every test image | ✅ 1 real ARW + 4 synthetic JPGs | `uv run pytest -q -k filters_and_auto` |
 | 4. 8 mockups render + arrow keys cycle | ✅ Rendered for every image; arrows checked in the browser | open Mockups, press `←` `→` |
-| 5. AI Critique / Auto-edit / Research / Best-of-N | ⚠️ **Mocked** – no API key here. All four modes ran against a scripted fake client; AI edits verified in the undo history | add your key, then `uv run pytest -q -k live` and try the AI tab |
+| 5. AI Critique / Auto-edit / Research / Best-of-N (+ Ask) | ✅ **Live** on Opus 5.5 via your Claude login (no key), plus a scripted fake for CI | `CCS_LIVE_AI=1 uv run pytest -q -k live` |
 | 6. Trim + LUT + title + 9:16 export | ✅ Synthetic clips; `.MTS` container covered | `uv run pytest -q -k export_9x16`, or in the Video tab |
-| 7. All tests pass | ✅ 51 passed, 1 skipped (the live-API test); CI green on macOS **and Windows** | `uv run pytest -q` |
+| 7. All tests pass | ✅ 55 passed offline + 4 live Opus tests; CI green on macOS **and Windows** | `uv run pytest -q` |
 
 **Needs real samples** – things that would benefit from your own files:
 
@@ -100,8 +97,8 @@ That pushes `main` and `build/v1` and opens the "create pull request" page. Past
 - Lens correction works when lensfun knows the lens: the kit 18-55 OSS, 55-210, 16-50 PZ
   and most Sony/Sigma E-mount primes are in its database.
 
-**Needs API key** – the AI tab (all four modes), "AI: make a 30 s reel", and the taste
-profile logging. Research mode uses the web search tool and costs a few cents per run.
+**AI usage** comes out of your Claude plan's limits (no separate bill). A typical Ask
+takes 10–20 s; Research and Best-of-N take 30–60 s.
 
 ## 7. Known issues
 

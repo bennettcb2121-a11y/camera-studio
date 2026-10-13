@@ -290,9 +290,10 @@ def stage_crop_rotate(img, s: EditSettings):
 def stage_vignette(img, s: EditSettings):
     if s.vignette == 0:
         return img
+    # Lightroom convention: negative darkens the edges, positive lightens them.
     mask = _radial(img.shape[:2])
     v = s.vignette / 100.0
-    ev = cv2.multiply(mask, float(-1.5 * v if v > 0 else -1.0 * v))
+    ev = cv2.multiply(mask, float(1.5 * v if v < 0 else 1.0 * v))
     return color.mul_mask(img, color.exp2(ev))
 
 

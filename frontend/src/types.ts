@@ -65,6 +65,7 @@ export interface MockupTemplate { id: string; name: string; slots: { corners: nu
 export interface Job {
   id: string; kind: string; status: 'queued' | 'running' | 'done' | 'error' | 'cancelled'
   progress: number; message: string; result: any; error: string | null; created: number; finished: number | null
+  live?: { path: string; settings: EditSettings; label: string; seq: number } | null
 }
 
 export interface VideoClip {

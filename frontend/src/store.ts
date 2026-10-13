@@ -33,7 +33,7 @@ interface State {
   open: (p: string) => void
   rate: (path: string, rating: number) => Promise<void>
   loadPresets: () => Promise<void>
-  trackJob: (job: Job, onDone?: (j: Job) => void) => Promise<Job>
+  trackJob: (job: Job, onDone?: (j: Job) => void, onProgress?: (j: Job) => void) => Promise<Job>
   toast: (text: string, kind?: 'info' | 'error') => void
   checkAI: () => Promise<void>
   setClipboard: (c: { source: string } | null) => void
@@ -84,9 +84,9 @@ export const useStore = create<State>((set, get) => ({
     set({ items: get().items.map((i) => (i.path === path ? { ...i, rating } : i)) })
   },
   loadPresets: async () => { const { presets } = await api.presets(); set({ presets }) },
-  trackJob: async (job, onDone) => {
+  trackJob: async (job, onDone, onProgress) => {
     set({ jobs: [job, ...get().jobs].slice(0, 20) })
-    const upd = (j: Job) => set({ jobs: get().jobs.map((x) => (x.id === j.id ? j : x)) })
+    const upd = (j: Job) => { set({ jobs: get().jobs.map((x) => (x.id === j.id ? j : x)) }); onProgress?.(j) }
     try {
       const done = await waitJob(job.id, upd)
       upd(done); onDone?.(done)
