@@ -1,0 +1,26 @@
+{
+ "id": "tropic",
+ "name": "Tropic",
+ "group": "Travel",
+ "description": "Saturated greens and cyan water, bright and clean.",
+ "order": 8,
+ "settings": {
+  "exposure": 0.15,
+  "hsl": {
+   "sat": [
+    0,
+    0,
+    0,
+    20,
+    25,
+    10,
+    0,
+    0
+   ]
+  },
+  "lut": {
+   "name": "tropic",
+   "strength": 0.9
+  }
+ }
+}

@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+:root { color-scheme: dark; }
+html, body, #root { height: 100%; margin: 0; background: #0f0f10; color: #e6e6e6; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+* { box-sizing: border-box; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+input[type=range] { -webkit-appearance: none; appearance: none; height: 4px; background: #2a2a2d; border-radius: 2px; outline: none; }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 12px; height: 12px; border-radius: 50%; background: #d4d4d8; cursor: pointer; }
+input[type=range]:focus::-webkit-slider-thumb { background: #60a5fa; }
+.btn { @apply px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-sm text-zinc-200 disabled:opacity-40 disabled:cursor-not-allowed; }
+.btn-primary { @apply px-2.5 py-1 rounded bg-blue-600 hover:bg-blue-500 text-sm text-white disabled:opacity-40; }
+.panel-title { @apply text-[11px] uppercase tracking-wider text-zinc-500 font-semibold; }
+kbd { @apply px-1 py-0.5 rounded bg-zinc-800 border border-zinc-700 text-[10px] text-zinc-300 font-mono; }

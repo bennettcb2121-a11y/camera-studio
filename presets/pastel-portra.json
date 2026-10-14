@@ -1,0 +1,15 @@
+{
+ "id": "pastel-portra",
+ "name": "Pastel Portra",
+ "group": "Film",
+ "description": "Soft, low-contrast pastel tones and gentle skin.",
+ "order": 1,
+ "settings": {
+  "highlights": -15,
+  "shadows": 15,
+  "lut": {
+   "name": "pastel-portra",
+   "strength": 1.0
+  }
+ }
+}

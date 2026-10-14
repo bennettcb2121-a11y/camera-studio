@@ -1,0 +1,142 @@
+# Setup for Charlie
+
+Everything below assumes a laptop with **nothing** installed. Steps marked 🟢 are
+required; everything else is optional.
+
+## 1. 🟢 Install uv (the only thing you need)
+
+**Mac** – open Terminal and paste:
+
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Windows** – open PowerShell and paste:
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+Close the terminal and open a new one afterwards so `uv` is on your PATH.
+That's it: uv downloads Python 3.12, FFmpeg and every library the first time you start
+the app. You do **not** need Python, Node, Homebrew, FFmpeg or Xcode.
+
+## 2. 🟢 Get the app folder
+
+**Mac** – you already have it: it is this folder (`~/Charlie's Camera Studio`).
+On a new machine, after the repository is on GitHub (see section 5):
+
+```bash
+git clone git@github.com:YOUR-USER/YOUR-REPO.git "Charlie's Camera Studio"
+cd "Charlie's Camera Studio"
+```
+
+(`git` is preinstalled on Mac; on Windows install it from https://git-scm.com or
+download the repository as a ZIP from GitHub and unzip it.)
+
+## 3. Claude for the AI panel — no API key
+
+The AI assistant runs Claude Opus 5.5 on **your Claude account**. The first time you
+start the app, `run.sh` / `run.bat` asks *"Sign in to Claude now?"* — press Enter and
+log in in the browser window that opens. That's it, once per laptop. (If you skip it, do
+it later with `uv run python -m backend.app.claude_login`.)
+
+## 3b. Google Photos (optional, one time, ~5 minutes)
+
+In the app: **Library → Google Photos → Set up Google Photos…** shows these steps with links:
+
+1. Create a Google Cloud project called *Camera Studio* (console.cloud.google.com).
+2. Enable **Photos Picker API** and **Photos Library API** for it.
+3. *Google Auth Platform → Get started*: app name, your email, Audience **External**;
+   then add your own Gmail under **Audience → Test users**.
+4. *Clients → Create client → Desktop app* → **Download JSON**.
+5. Choose that file in the app, click **Connect Google Photos**, sign in. Google says
+   "this app isn't verified" — expected for your own private app; click **Continue**.
+
+Then **Import from Google Photos** picks photos to edit, and **⬆ Google Photos** uploads
+edits to a *Charlie's Camera Studio* album. (Google no longer lets any app read your whole
+library — you pick what to bring in each time.) Test-mode sign-ins may need repeating
+about once a week; just click Connect again.
+
+## 4. 🟢 Start the app
+
+**Mac:** double-click `run.sh`, or in Terminal:
+
+```bash
+./run.sh
+```
+
+**Windows:** double-click `run.bat`.
+
+The first start takes a minute or two (downloads Python + libraries, ~600 MB). It then
+opens http://127.0.0.1:8765 in your browser. Keep the terminal window open while you
+use the app; close it (or press Ctrl+C) to stop. Press `?` in the app for the
+shortcut list; the full feature tour is in [README.md](README.md).
+
+First thing to do in the app: **Library → + Add folder** and pick the folder with your
+a6000 photos/videos (the SD card folder `DCIM/100MSDCF` works, or a copy on disk).
+
+## 5. Getting this onto GitHub + the pull request
+
+The build session had no GitHub access (no `gh`, no token), so the branch is committed
+locally only. To publish it:
+
+1. On github.com create an empty repository (private is fine), e.g. `camera-studio`.
+2. In the app folder run:
+
+```bash
+./open_pr.sh git@github.com:YOUR-USER/camera-studio.git
+```
+
+That pushes `main` and `build/v1` and opens the "create pull request" page. Paste
+[PR_BODY.md](PR_BODY.md) as the description.
+
+## 6. What was checked here, and what you should re-check
+
+| Check | Status in the build session | How you run it |
+|---|---|---|
+| 1. `./run.sh` from a fresh clone with only uv | ✅ Done (cloned into a temp folder, started, health-checked) | `./run.sh` on your other laptop |
+| 2. Raw opens, sliders fast, export = preview (<2%) | ✅ With one real ILCE-6000 ARW from raw.pixls.us | `uv run pytest -q -k "preview_under_150ms or export_matches"` |
+| 3. 25 filters + Auto on every test image | ✅ 1 real ARW + 4 synthetic JPGs | `uv run pytest -q -k filters_and_auto` |
+| 4. 8 mockups render + arrow keys cycle | ✅ Rendered for every image; arrows checked in the browser | open Mockups, press `←` `→` |
+| 5. AI Critique / Auto-edit / Research / Best-of-N (+ Ask) | ✅ **Live** on Opus 5.5 via your Claude login (no key), plus a scripted fake for CI | `CCS_LIVE_AI=1 uv run pytest -q -k live` |
+| 6. Trim + LUT + title + 9:16 export | ✅ Synthetic clips; `.MTS` container covered | `uv run pytest -q -k export_9x16`, or in the Video tab |
+| 7. All tests pass | ✅ 55 passed offline + 4 live Opus tests; CI green on macOS **and Windows** | `uv run pytest -q` |
+
+**Needs real samples** – things that would benefit from your own files:
+
+- Only one a6000 `.ARW` exists publicly; your own raws (high ISO, backlit, portraits)
+  will show whether the Auto exposure/denoise defaults feel right.
+- The test videos are synthetic. Real `.MTS` files from the camera should play after
+  the proxy is built (first add takes a few seconds per clip); please check audio sync
+  and that "Split into shots" finds your real cuts (threshold 27 in
+  `backend/app/core/video.py`).
+- Lens correction works when lensfun knows the lens: the kit 18-55 OSS, 55-210, 16-50 PZ
+  and most Sony/Sigma E-mount primes are in its database.
+
+**AI usage** comes out of your Claude plan's limits (no separate bill). A typical Ask
+takes 10–20 s; Research and Best-of-N take 30–60 s.
+
+## 7. Known issues
+
+- The first open of a raw takes ~1 s (decoding + proxy cache); afterwards it is instant.
+- Preview JPEGs are sRGB; there is no display-profile colour management in the browser.
+- The video preview plays the **selected clip** only (from its 720p proxy). Use
+  **Render draft** to watch the whole timeline with looks and titles.
+- Speed changes on the preview player are approximate (browser playback rate);
+  exports are exact.
+- Windows: the full test suite passes on GitHub's Windows runner (CI badge on the
+  repo), but the UI was only clicked through on a Mac. The native folder/file dialogs
+  use PowerShell on Windows. If anything fails, run `uv run python -m backend.app.main`
+  in a terminal and send me the error.
+- Very large libraries (10k+ files) will make the first scan slow; thumbnails are
+  built lazily.
+
+## 8. Three things I'd improve next
+
+1. **Masks**: a brush/gradient/subject mask so exposure and clarity can be local
+   (the pipeline already works on per-pixel gain maps, so this is mostly UI).
+2. **Timeline playback**: play the whole sequence in-browser without a draft render
+   (chain the proxies with a hidden second `<video>` for gapless switching).
+3. **Real-camera presets**: a Sony "Creative Style" starting point per picture profile
+   and DCP-style camera colour matrices, so slider zero looks exactly like the camera JPEG.

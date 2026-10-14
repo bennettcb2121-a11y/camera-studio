@@ -1,0 +1,31 @@
+{
+ "name": "Magazine spread",
+ "slots": [
+  {
+   "corners": [
+    [
+     190,
+     260
+    ],
+    [
+     760,
+     278
+    ],
+    [
+     760,
+     950
+    ],
+    [
+     190,
+     970
+    ]
+   ]
+  }
+ ],
+ "blend": {
+  "mode": "normal",
+  "opacity": 1.0,
+  "fit": "cover"
+ },
+ "overlay": "overlay.png"
+}

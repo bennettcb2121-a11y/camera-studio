@@ -1,0 +1,15 @@
+{
+ "id": "flat-profile",
+ "name": "Flat Profile",
+ "group": "Utility",
+ "description": "Low-contrast, desaturated base for grading.",
+ "order": 21,
+ "settings": {
+  "highlights": -25,
+  "shadows": 25,
+  "lut": {
+   "name": "flat-profile",
+   "strength": 1.0
+  }
+ }
+}

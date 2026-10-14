@@ -1,0 +1,15 @@
+{
+ "id": "web-sharp",
+ "name": "Web Sharp",
+ "group": "Utility",
+ "description": "Sharpen and slight contrast for small-screen viewing.",
+ "order": 23,
+ "settings": {
+  "sharpen": 40,
+  "clarity": 10,
+  "lut": {
+   "name": "web-sharp",
+   "strength": 1.0
+  }
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "id": "sepia",
+ "name": "Sepia",
+ "group": "Utility",
+ "description": "Classic brown-toned monochrome.",
+ "order": 24,
+ "settings": {
+  "contrast": 5,
+  "lut": {
+   "name": "sepia",
+   "strength": 1.0
+  }
+ }
+}

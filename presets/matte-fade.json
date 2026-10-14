@@ -1,0 +1,14 @@
+{
+ "id": "matte-fade",
+ "name": "Matte Fade",
+ "group": "Portrait",
+ "description": "Lifted blacks, milky highlights, editorial feel.",
+ "order": 12,
+ "settings": {
+  "contrast": 10,
+  "lut": {
+   "name": "matte-fade",
+   "strength": 1.0
+  }
+ }
+}

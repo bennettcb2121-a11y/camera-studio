@@ -1,0 +1,31 @@
+{
+ "name": "Phone screen (9:16)",
+ "slots": [
+  {
+   "corners": [
+    [
+     610,
+     263
+    ],
+    [
+     990,
+     263
+    ],
+    [
+     990,
+     938
+    ],
+    [
+     610,
+     938
+    ]
+   ]
+  }
+ ],
+ "blend": {
+  "mode": "normal",
+  "opacity": 1.0,
+  "fit": "cover"
+ },
+ "overlay": "overlay.png"
+}

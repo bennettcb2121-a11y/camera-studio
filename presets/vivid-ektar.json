@@ -1,0 +1,14 @@
+{
+ "id": "vivid-ektar",
+ "name": "Vivid Ektar",
+ "group": "Film",
+ "description": "Punchy saturated slide-film colour with deep blues.",
+ "order": 2,
+ "settings": {
+  "vibrance": 10,
+  "lut": {
+   "name": "vivid-ektar",
+   "strength": 0.85
+  }
+ }
+}

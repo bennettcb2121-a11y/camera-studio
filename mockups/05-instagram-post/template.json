@@ -1,0 +1,30 @@
+{
+ "name": "Instagram post (4:5)",
+ "slots": [
+  {
+   "corners": [
+    [
+     0,
+     130
+    ],
+    [
+     1080,
+     130
+    ],
+    [
+     1080,
+     1480
+    ],
+    [
+     0,
+     1480
+    ]
+   ]
+  }
+ ],
+ "blend": {
+  "mode": "normal",
+  "opacity": 1.0,
+  "fit": "cover"
+ }
+}

@@ -1,0 +1,14 @@
+{
+ "id": "tungsten-night",
+ "name": "Tungsten Night",
+ "group": "Film",
+ "description": "Cinestill-style teal shadows, glowing warm highlights.",
+ "order": 5,
+ "settings": {
+  "contrast": 10,
+  "lut": {
+   "name": "tungsten-night",
+   "strength": 0.9
+  }
+ }
+}

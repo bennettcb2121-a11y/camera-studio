@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Charlie's Camera Studio — Mac/Linux start script.
+# Needs only `uv` (https://docs.astral.sh/uv/). Everything else installs itself.
+set -e
+cd "$(dirname "$0")"
+# uv installs to ~/.local/bin (or ~/.cargo/bin); make sure we find it even when the
+# shell PATH has not been refreshed since the install.
+export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
+if ! command -v uv >/dev/null 2>&1; then
+  echo "uv is not installed. Install it with:"
+  echo "  curl -LsSf https://astral.sh/uv/install.sh | sh"
+  echo "then open a new terminal and run ./run.sh again."
+  exit 1
+fi
+echo "Installing / checking Python and dependencies (first run takes a minute)..."
+uv sync --frozen --quiet
+# One-time Claude sign-in for the AI assistant (asks only if you're not signed in yet).
+uv run python -m backend.app.claude_login --ensure || true
+exec uv run python -m backend.app.main --open "$@"

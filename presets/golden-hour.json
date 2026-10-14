@@ -1,0 +1,15 @@
+{
+ "id": "golden-hour",
+ "name": "Golden Hour",
+ "group": "Travel",
+ "description": "Warm sun, lifted shadows, glowing highlights.",
+ "order": 6,
+ "settings": {
+  "shadows": 20,
+  "vibrance": 15,
+  "lut": {
+   "name": "golden-hour",
+   "strength": 0.9
+  }
+ }
+}

@@ -1,0 +1,15 @@
+{
+ "id": "warm-glow",
+ "name": "Warm Glow",
+ "group": "Portrait",
+ "description": "Flattering warmth with soft highlights.",
+ "order": 13,
+ "settings": {
+  "highlights": -20,
+  "shadows": 10,
+  "lut": {
+   "name": "warm-glow",
+   "strength": 0.9
+  }
+ }
+}

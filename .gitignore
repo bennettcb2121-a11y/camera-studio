@@ -13,3 +13,7 @@ samples/*.ARW
 samples/*.MTS
 samples/*.MP4
 .DS_Store
+# edit sidecars made while testing, and generated test fixtures (backend/tests/make_fixtures.py)
+*.ccs.json
+samples/synth_*
+exports/

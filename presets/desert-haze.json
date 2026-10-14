@@ -1,0 +1,14 @@
+{
+ "id": "desert-haze",
+ "name": "Desert Haze",
+ "group": "Travel",
+ "description": "Dusty warm matte with soft blacks.",
+ "order": 10,
+ "settings": {
+  "highlights": -10,
+  "lut": {
+   "name": "desert-haze",
+   "strength": 0.9
+  }
+ }
+}
