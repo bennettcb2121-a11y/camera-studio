@@ -49,6 +49,9 @@ def connect(request: Request):
 def callback(code: str | None = None, state: str | None = None, error: str | None = None):
     if error or not code or not state:
         msg = f"Google sign-in was cancelled ({html.escape(error or 'no code')})."
+        if error == "access_denied":
+            msg += (" If Google said “Access blocked”, add your Gmail under Google Cloud → Google Auth Platform → "
+                    "Audience → Test users, then click Connect again.")
     else:
         try:
             r = gphotos.finish_auth(code, state)

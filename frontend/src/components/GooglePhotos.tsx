@@ -94,7 +94,8 @@ function SetupModal({ onClose }: { onClose: () => void }) {
           <li>Enable both APIs (make sure the new project is selected at the top):{' '}
             <a className="underline text-blue-300" href="https://console.cloud.google.com/apis/library/photospicker.googleapis.com" target="_blank">Photos Picker API</a> and{' '}
             <a className="underline text-blue-300" href="https://console.cloud.google.com/apis/library/photoslibrary.googleapis.com" target="_blank">Photos Library API</a> → <b>Enable</b>.</li>
-          <li>Open <a className="underline text-blue-300" href="https://console.cloud.google.com/auth/overview" target="_blank">Google Auth Platform</a> → <b>Get started</b>: app name “Camera Studio”, your email, Audience <b>External</b>, finish. Then under <b>Audience → Test users</b> add your own Gmail address.</li>
+          <li>Open <a className="underline text-blue-300" href="https://console.cloud.google.com/auth/overview" target="_blank">Google Auth Platform</a> → <b>Get started</b>: app name “Camera Studio”, your email, Audience <b>External</b>, finish.</li>
+          <li className="text-yellow-200"><b>Don't skip:</b> open <a className="underline text-blue-300" href="https://console.cloud.google.com/auth/audience" target="_blank">Audience</a> → <b>Test users → + Add users</b> → your Gmail → Save. Without this Google shows “Access blocked … Error 403: access_denied”.</li>
           <li>Go to <a className="underline text-blue-300" href="https://console.cloud.google.com/auth/clients" target="_blank">Clients</a> → <b>Create client</b> → Application type <b>Desktop app</b> → Create → <b>Download JSON</b>.</li>
           <li>Choose that downloaded file here:</li>
         </ol>
