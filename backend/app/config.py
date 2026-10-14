@@ -24,6 +24,8 @@ PROXY_DIR = DATA_DIR / "proxies"
 THUMB_DIR = DATA_DIR / "thumbs"
 VIDEO_PROXY_DIR = DATA_DIR / "video_proxies"
 EXPORT_DIR = Path(os.environ.get("CCS_EXPORT_DIR", ROOT / "exports"))
+# Photos picked from Google Photos are downloaded here (one dated subfolder per import).
+GOOGLE_IMPORT_DIR = Path(os.environ.get("CCS_GOOGLE_IMPORT_DIR", Path.home() / "Pictures" / "Camera Studio" / "Google Photos"))
 DB_PATH = DATA_DIR / "library.db"
 for _d in (PROXY_DIR, THUMB_DIR, VIDEO_PROXY_DIR, EXPORT_DIR):
     _d.mkdir(parents=True, exist_ok=True)

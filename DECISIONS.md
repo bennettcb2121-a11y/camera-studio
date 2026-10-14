@@ -70,3 +70,14 @@ Choices made autonomously during the build, with reasons. Newest at the bottom.
     `setting_sources=[]`). The API-key path still works (`CCS_AI_BACKEND=api`).
 20. **Opus can look at its own work** (`view_photo` tool returns the current render as an
     image), so Ask/Auto-edit are edit → look → refine loops instead of blind slider guesses.
+21. **Google Photos via Picker + appendonly.** Since 31 Mar 2025 Google removed the
+    library-wide read scopes; apps can only (a) receive items the user picks in the
+    Google-hosted Picker (`photospicker.mediaitems.readonly`) and (b) upload / create
+    albums (`photoslibrary.appendonly`). So: Import = Picker session → poll → download
+    originals (`=d`, videos `=dv`) into ~/Pictures/Camera Studio/Google Photos/<date> and
+    index that folder; Upload = full-res edited JPEG → uploads → batchCreate into a
+    "Charlie's Camera Studio" album. OAuth is a Desktop-app client Charlie creates himself
+    (Google requires per-app credentials), PKCE + loopback redirect to the app's own
+    server; client JSON and tokens live in .cache/ (git-ignored, chmod 600). Tested with an
+    httpx MockTransport fake of Google; not yet run against the real service because that
+    needs Charlie's OAuth client.

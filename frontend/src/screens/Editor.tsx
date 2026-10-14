@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { api, type AIStatus } from '../api'
 import { isTyping, useStore } from '../store'
+import { uploadToGoogle, useGoogle } from '../components/GooglePhotos'
 import { ASPECTS, HSL_BANDS, defaultSettings, type EditSettings, type History, type Histogram as H, type PhotoInfo } from '../types'
 import Slider from '../components/Slider'
 import Histogram from '../components/Histogram'
@@ -380,6 +381,8 @@ function ExportModal({ paths, onClose }: { paths: string[]; onClose: () => void 
   const [format, setFormat] = useState(init.format)
   const [quality, setQuality] = useState(init.quality)
   const [longEdge, setLongEdge] = useState<string>(init.longEdge)
+  const google = useGoogle((g) => g.status)
+  useEffect(() => { useGoogle.getState().refresh() }, [])
   return (
     <Modal title={`Export ${paths.length} photo${paths.length > 1 ? 's' : ''}`} onClose={onClose}>
       <div className="space-y-3 text-sm">
@@ -393,6 +396,9 @@ function ExportModal({ paths, onClose }: { paths: string[]; onClose: () => void 
             onClose(); quickExport(paths, store)
           }}>Export</button></div>
         <div className="text-[11px] text-zinc-500">These settings are remembered: <kbd>Shift+Cmd+E</kbd> exports straight away with them.</div>
+        {google?.connected && <div className="border-t border-zinc-800 pt-3 flex items-center gap-2">
+          <button className="btn" onClick={() => { onClose(); uploadToGoogle(paths) }}>⬆ Upload to Google Photos</button>
+          <span className="text-[11px] text-zinc-500">full-res JPEG into the “Charlie's Camera Studio” album</span></div>}
       </div>
     </Modal>
   )

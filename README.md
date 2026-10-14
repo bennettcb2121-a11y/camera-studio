@@ -29,6 +29,17 @@ machine had: **[ENVIRONMENT.md](ENVIRONMENT.md)**.
   photo/video and minimum rating, sort by name/date/rating, multi-select
   (Shift / Cmd-click).
 
+### Google Photos
+- **Import:** *Library → Google Photos → Import* opens Google's photo picker in a new tab;
+  tick photos/videos, click Done, and the originals download to
+  `~/Pictures/Camera Studio/Google Photos/<date>` and appear as a library folder.
+- **Upload:** select photos → *⬆ Google Photos* (Library action bar or the Export dialog)
+  uploads full-resolution edited JPEGs to a **Charlie's Camera Studio** album.
+- Google only lets apps see photos you pick (it stopped whole-library access in March
+  2025), so there's no background syncing. One-time setup: create your own OAuth client in
+  Google Cloud (the app walks you through it; see SETUP_FOR_CHARLIE.md). The client file
+  and sign-in token live in `.cache/` and never go into git.
+
 ### Photo editor
 - One edit pipeline (`backend/app/core/pipeline.py`) used for previews, exports, mockups,
   AI previews and video looks. Order: white balance → exposure → highlights/shadows →

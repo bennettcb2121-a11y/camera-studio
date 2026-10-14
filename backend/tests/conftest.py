@@ -18,6 +18,7 @@ sys.path.insert(0, str(ROOT / "backend"))
 _TMP = Path(tempfile.mkdtemp(prefix="ccs_test_"))
 os.environ["CCS_DATA_DIR"] = str(_TMP / "cache")
 os.environ["CCS_EXPORT_DIR"] = str(_TMP / "exports")
+os.environ["CCS_GOOGLE_IMPORT_DIR"] = str(_TMP / "google_import")
 os.environ.pop("ANTHROPIC_API_KEY", None)
 # Offline + deterministic by default: the API runner with no key = "AI unavailable".
 # Live tests build an AgentRunner explicitly (CCS_LIVE_AI=1).

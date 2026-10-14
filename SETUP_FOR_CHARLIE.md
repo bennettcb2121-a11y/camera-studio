@@ -41,6 +41,23 @@ start the app, `run.sh` / `run.bat` asks *"Sign in to Claude now?"* — press En
 log in in the browser window that opens. That's it, once per laptop. (If you skip it, do
 it later with `uv run python -m backend.app.claude_login`.)
 
+## 3b. Google Photos (optional, one time, ~5 minutes)
+
+In the app: **Library → Google Photos → Set up Google Photos…** shows these steps with links:
+
+1. Create a Google Cloud project called *Camera Studio* (console.cloud.google.com).
+2. Enable **Photos Picker API** and **Photos Library API** for it.
+3. *Google Auth Platform → Get started*: app name, your email, Audience **External**;
+   then add your own Gmail under **Audience → Test users**.
+4. *Clients → Create client → Desktop app* → **Download JSON**.
+5. Choose that file in the app, click **Connect Google Photos**, sign in. Google says
+   "this app isn't verified" — expected for your own private app; click **Continue**.
+
+Then **Import from Google Photos** picks photos to edit, and **⬆ Google Photos** uploads
+edits to a *Charlie's Camera Studio* album. (Google no longer lets any app read your whole
+library — you pick what to bring in each time.) Test-mode sign-ins may need repeating
+about once a week; just click Connect again.
+
 ## 4. 🟢 Start the app
 
 **Mac:** double-click `run.sh`, or in Terminal:

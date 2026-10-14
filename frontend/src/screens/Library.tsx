@@ -3,6 +3,7 @@ import { api } from '../api'
 import { isTyping, useStore } from '../store'
 import FolderBrowser from '../components/FolderBrowser'
 import { quickExport } from './Editor'
+import { GooglePhotosPanel, uploadToGoogle, useGoogle } from '../components/GooglePhotos'
 
 export default function Library() {
   const s = useStore()
@@ -60,6 +61,7 @@ export default function Library() {
           ))}
         </div>
         <button className="btn" onClick={async () => { const r = await api.rescan(); s.toast(`Rescanned: ${r.items} files`); s.loadItems() }}>Rescan</button>
+        <div className="mt-2"><GooglePhotosPanel /></div>
         <div className="panel-title mt-2">Show</div>
         <div className="flex gap-1">
           {(['all', 'photo', 'video'] as const).map((k) => <button key={k} className={`btn flex-1 ${s.kindFilter === k ? '!bg-zinc-600' : ''}`} onClick={() => s.setKindFilter(k)}>{k === 'all' ? 'All' : k === 'photo' ? 'Photos' : 'Videos'}</button>)}
@@ -122,6 +124,7 @@ function ActionBar() {
   const s = useStore()
   const photos = s.selected.filter((p) => s.items.find((i) => i.path === p)?.kind === 'photo')
   const [busy, setBusy] = useState(false)
+  const google = useGoogle((g) => g.status)
   if (!photos.length) return <div className="h-3" />
   const n = photos.length
   const run = async (fn: () => Promise<void>) => { setBusy(true); try { await fn() } catch (e: any) { s.toast(e.message, 'error') } finally { setBusy(false); s.loadItems() } }
@@ -143,6 +146,7 @@ function ActionBar() {
           s.toast(`Claude is editing ${n} photo${n > 1 ? 's' : ''} — progress under Jobs`)
           const j = await s.trackJob(job); const ok = j.result.results.filter((r: any) => r.ok).length; s.toast(`Claude edited ${ok}/${n}`) })
       }}>✦ AI edit…</button>
+      {google?.connected && <button className="btn" disabled={busy} onClick={() => uploadToGoogle(photos)} title="Edited, full-resolution JPEGs into the “Charlie's Camera Studio” album">⬆ Google Photos</button>}
       <button className="btn-primary" disabled={busy} onClick={() => quickExport(photos, useStore.getState())} title="Uses your last export settings">Export {n}</button>
       <button className="btn" onClick={() => useStore.setState({ selected: [] })}>✕</button>
     </div>

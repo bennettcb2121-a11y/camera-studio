@@ -18,7 +18,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from . import config
-from .api import ai, jobs_api, library, mockups, photos, presets, video
+from .api import ai, google, jobs_api, library, mockups, photos, presets, video
 from .core.library import init_db
 
 log = logging.getLogger("ccs")
@@ -47,7 +47,8 @@ def create_app() -> FastAPI:
         yield
 
     app = FastAPI(title="Charlie's Camera Studio", version="0.1.0", lifespan=lifespan)
-    for r in (library.router, photos.router, presets.router, mockups.router, ai.router, video.router, jobs_api.router):
+    for r in (library.router, photos.router, presets.router, mockups.router, ai.router, video.router, jobs_api.router,
+              google.router):
         app.include_router(r)
 
     @app.get("/api/health")
