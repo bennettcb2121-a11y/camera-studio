@@ -147,7 +147,7 @@ class GooglePhotos:
         headers = {"Authorization": f"Bearer {self._token()}", **kw.pop("headers", {})}
         r = self._http.request(method, url, headers=headers, **kw)
         if r.status_code >= 400:
-            raise GoogleError(f"Google Photos error {r.status_code}: {r.text[:300]}")
+            raise GoogleError(_friendly_error(r))
         return r
 
     # ------------------------------------------------------------------ import (Picker)
@@ -238,6 +238,26 @@ class GooglePhotos:
 
 
 # ---------------------------------------------------------------------- helpers
+def _friendly_error(r: httpx.Response) -> str:
+    """Turn Google's JSON errors into one actionable sentence."""
+    try:
+        err = r.json().get("error", {})
+        msg = err.get("message", "") or r.text
+    except Exception:
+        msg = r.text
+    if "has not been used in project" in msg or "is disabled" in msg:
+        api = "Photos Picker API" if "photospicker" in msg else "Photos Library API" if "photoslibrary" in msg else "the API"
+        link = re.search(r"https://console\.developers\.google\.com/\S+?(?=\s|$)", msg)
+        return (f"{api} is not turned on for your Google Cloud project yet. Enable it here, wait a minute, then try again: "
+                + (link.group(0).rstrip(".") if link else "https://console.cloud.google.com/apis/library"))
+    if r.status_code == 403 and "insufficient" in msg.lower():
+        return "Google Photos permission missing: click disconnect, then Connect again and tick every box."
+    if r.status_code == 401:
+        return "Google sign-in expired. Click disconnect, then Connect Google Photos again."
+    return f"Google Photos error {r.status_code}: {msg[:300]}"
+
+
+
 def _duration(v, default: float) -> float:
     m = re.match(r"^([\d.]+)s$", str(v or ""))
     return float(m.group(1)) if m else default

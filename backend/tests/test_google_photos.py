@@ -162,3 +162,12 @@ def test_token_refresh(fake_google, app_client):
 def test_upload_requires_connection(app_client, fake_google, photos):
     r = app_client.post("/api/google/upload", json={"paths": [str(photos[0])]})
     assert r.status_code == 409
+
+
+def test_friendly_api_disabled_error():
+    body = {"error": {"code": 403, "message": "Google Photos Picker API has not been used in project 236331109991 before or it "
+            "is disabled. Enable it by visiting https://console.developers.google.com/apis/api/photospicker.googleapis.com/"
+            "overview?project=236331109991 then retry.", "status": "PERMISSION_DENIED"}}
+    msg = G._friendly_error(httpx.Response(403, json=body))
+    assert msg.startswith("Photos Picker API is not turned on")
+    assert msg.endswith("overview?project=236331109991")
